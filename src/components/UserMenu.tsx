@@ -28,11 +28,16 @@ export function UserMenu({ displayName, imageUrl, onLogout }: UserMenuProps) {
 
   const handleLogout = async () => {
     try {
+      // The logout endpoint will redirect to home and clear the cookie
       const res = await fetch("/api/auth/logout", {
         method: "POST",
         credentials: "same-origin",
       });
-      if (res.ok) {
+      // If redirect happens, follow it
+      if (res.redirected) {
+        window.location.href = res.url;
+      } else if (res.ok) {
+        // Fallback if no redirect
         onLogout?.();
         window.location.href = "/";
       }

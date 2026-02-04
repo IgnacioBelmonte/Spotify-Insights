@@ -17,21 +17,43 @@ export async function exchangeCodeForToken(code: string) {
     `${process.env.SPOTIFY_CLIENT_ID!}:${process.env.SPOTIFY_CLIENT_SECRET!}`
   ).toString("base64");
 
-  const r = await fetch("https://accounts.spotify.com/api/token", {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${basic}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body,
-  });
+  // Retry logic for transient errors (503, network issues)
+  const maxRetries = 3;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const r = await fetch("https://accounts.spotify.com/api/token", {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${basic}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body,
+      });
 
-  if (!r.ok) {
-    const txt = await r.text();
-    throw new Error(`Token exchange failed: ${r.status} ${txt}`);
+      if (!r.ok) {
+        const txt = await r.text();
+        // 503 is temporary, retry
+        if (r.status === 503 && attempt < maxRetries) {
+          console.warn(`[spotify token] 503 error, retry ${attempt}/${maxRetries}`);
+          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+          continue;
+        }
+        throw new Error(`Token exchange failed: ${r.status} ${txt}`);
+      }
+
+      return (await r.json()) as TokenResponse;
+    } catch (error) {
+      // Network error, retry if not last attempt
+      if (attempt < maxRetries && error instanceof TypeError) {
+        console.warn(`[spotify token] Network error, retry ${attempt}/${maxRetries}:`, error.message);
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+        continue;
+      }
+      throw error;
+    }
   }
 
-  return (await r.json()) as TokenResponse;
+  throw new Error("Token exchange failed after retries");
 }
 
 export async function fetchSpotifyMe(accessToken: string) {
@@ -78,5 +100,4 @@ export async function refreshAccessToken(refreshToken: string) {
   }
 
   return (await r.json()) as RefreshResponse;
-
 }

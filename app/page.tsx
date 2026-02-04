@@ -10,6 +10,7 @@ export default function Home() {
   const [userName, setUserName] = useState<string | null>(null);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   async function handleSync() {
     setLoading(true);
@@ -58,15 +59,35 @@ export default function Home() {
     }
     fetchSession();
     setMounted(true);
+
+    // Check for auth error in URL query params
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get("error");
+    if (error) {
+      setAuthError(decodeURIComponent(error));
+    }
+
     return () => {
       active = false;
     };
   }, []);
 
   return (
-    <main className="min-h-screen bg-linear-to-b from-black via-slate-900 to-slate-800 text-white flex items-center justify-center p-6">
+    <main className="min-h-screen bg-linear-to-b from-black via-slate-900 to-slate-800 text-white flex items-center justify-center p-6" suppressHydrationWarning>
       <div className="max-w-3xl w-full">
         <div className="bg-slate-900/60 backdrop-blur-md border border-slate-700 rounded-2xl p-8 shadow-lg">
+          {authError && (
+            <div className="mb-6 p-4 bg-red-900/30 border border-red-700 rounded-lg text-red-300 text-sm">
+              <p className="font-semibold">Authentication Error</p>
+              <p className="mt-1">{authError}</p>
+              <button
+                onClick={() => setAuthError(null)}
+                className="mt-2 text-xs underline hover:text-red-200"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
           <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-semibold">Spotify Insights</h1>
@@ -91,9 +112,12 @@ export default function Home() {
                     onClick={async () => {
                       try {
                         const res = await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
-                        if (res.ok) {
+                        if (res.redirected) {
+                          window.location.href = res.url;
+                        } else if (res.ok) {
                           setUserName(null);
                           setUserAvatar(null);
+                          window.location.href = "/";
                         }
                       } catch (err) {
                         console.error("Logout failed:", err);
