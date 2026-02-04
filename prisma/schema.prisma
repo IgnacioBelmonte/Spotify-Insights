@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String   @id @default(cuid())
+  spotifyUserId String   @unique
+  displayName   String?
+  email         String?
+  imageUrl      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  token         SpotifyToken?
+  listening     ListeningEvent[]
+}
+
+model SpotifyToken {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  accessToken  String
+  refreshToken String
+  expiresAt    DateTime
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+}
+
+model Track {
+  id          String   @id // Spotify Track ID
+  name        String
+  artistName  String
+  albumName   String?
+  durationMs  Int?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  features    AudioFeatures?
+  events      ListeningEvent[]
+}
+
+model AudioFeatures {
+  trackId        String  @id
+  danceability   Float?
+  energy         Float?
+  valence        Float?
+  tempo          Float?
+  acousticness   Float?
+  instrumentalness Float?
+  liveness       Float?
+  speechiness    Float?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  track          Track   @relation(fields: [trackId], references: [id], onDelete: Cascade)
+}
+
+model ListeningEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  trackId   String
+  playedAt  DateTime
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@index([userId, playedAt])
+  @@index([trackId])
+}
