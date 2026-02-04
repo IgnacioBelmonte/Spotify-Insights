@@ -38,7 +38,7 @@ export async function getTotalListeningStats(
     SELECT
       COALESCE(
         CAST(
-          SUM(CAST(t."durationMs" AS BIGINT)) / 60000 AS BIGINT
+          SUM(CAST(t."durationMs" AS BIGINT)) / 60000 AS INTEGER
         ),
         0
       ) AS total_minutes_listened,
@@ -76,12 +76,12 @@ export async function getTopTracks(userId: string, limit: number = 10): Promise<
       t."name" AS track_name,
       t."artistName" AS artist_name,
       COUNT(le."id")::INTEGER AS play_count,
-      COALESCE(
-        CAST(
-          SUM(CAST(t."durationMs" AS BIGINT)) / 60000 AS BIGINT
-        ),
-        0
-      )::INTEGER AS total_minutes_listened
+        COALESCE(
+          CAST(
+            SUM(CAST(t."durationMs" AS BIGINT)) / 60000 AS INTEGER
+          ),
+          0
+        ) AS total_minutes_listened
     FROM "ListeningEvent" le
     JOIN "Track" t ON le."trackId" = t."id"
     WHERE le."userId" = ${userId}
@@ -113,14 +113,14 @@ export async function getDailyListeningActivity(
     }>
   >`
     SELECT
-      DATE(le."playedAt") AS date,
+      CAST(DATE(le."playedAt") AS Date) AS date,
       COUNT(le."id")::INTEGER AS plays_count,
       COALESCE(
         CAST(
-          SUM(CAST(t."durationMs" AS BIGINT)) / 60000 AS BIGINT
+          SUM(CAST(t."durationMs" AS BIGINT)) / 60000 AS INTEGER
         ),
         0
-      )::INTEGER AS total_minutes_listened
+      ) AS total_minutes_listened
     FROM "ListeningEvent" le
     JOIN "Track" t ON le."trackId" = t."id"
     WHERE le."userId" = ${userId}
