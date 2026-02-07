@@ -133,13 +133,16 @@ describe("insights.repository", () => {
       const mockActivity = [
         {
           date: "2026-02-04",
-          plays_count: 5,
-          total_minutes_listened: 30,
+          total_duration_ms: 1800000,
+          tracks: [
+            { trackId: "1", name: "Song 1", artistName: "Artist 1", playCount: 3 },
+            { trackId: "2", name: "Song 2", artistName: "Artist 2", playCount: 2 },
+          ],
         },
         {
           date: "2026-02-03",
-          plays_count: 3,
-          total_minutes_listened: 18,
+          total_duration_ms: 1080000,
+          tracks: [{ trackId: "3", name: "Song 3", artistName: "Artist 3", playCount: 3 }],
         },
       ];
 
@@ -151,8 +154,11 @@ describe("insights.repository", () => {
       expect(activity).toHaveLength(2);
       expect(activity[0]).toEqual({
         date: "2026-02-04",
-        playsCount: 5,
-        minutesListened: 30,
+        durationMs: 1800000,
+        tracks: [
+          { trackId: "1", name: "Song 1", artistName: "Artist 1", playCount: 3 },
+          { trackId: "2", name: "Song 2", artistName: "Artist 2", playCount: 2 },
+        ],
       });
     });
 

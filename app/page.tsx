@@ -73,25 +73,35 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-linear-to-b from-black via-slate-900 to-slate-800 text-white flex items-center justify-center p-6" suppressHydrationWarning>
+    <main className="min-h-screen bg-linear-to-b from-[#06151a] via-[#0b1f2a] to-[#0a0f14] text-[#e6f3f1] flex items-center justify-center p-6" suppressHydrationWarning>
       <div className="max-w-3xl w-full">
-        <div className="bg-slate-900/60 backdrop-blur-md border border-slate-700 rounded-2xl p-8 shadow-lg">
+        <div className="bg-[#0f1b24]/75 backdrop-blur-md border border-[#1b3a40] rounded-2xl p-8 shadow-xl shadow-emerald-500/10">
           {authError && (
-            <div className="mb-6 p-4 bg-red-900/30 border border-red-700 rounded-lg text-red-300 text-sm">
+            <div className="mb-6 p-4 bg-red-950/40 border border-red-800 rounded-lg text-red-200 text-sm">
               <p className="font-semibold">Authentication Error</p>
               <p className="mt-1">{authError}</p>
               <button
                 onClick={() => setAuthError(null)}
-                className="mt-2 text-xs underline hover:text-red-200"
+                className="mt-2 text-xs underline hover:text-red-100"
               >
                 Dismiss
               </button>
             </div>
           )}
           <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-semibold">Spotify Insights</h1>
-              <p className="text-slate-300 mt-1">Your listening analytics, powered by Spotify.</p>
+            <div className="flex items-center gap-3">
+              <Image
+                src="/spotify-insights-logo.svg"
+                alt="Spotify Insights logo"
+                width={44}
+                height={44}
+                priority
+                className="rounded-2xl shadow-md shadow-emerald-500/20"
+              />
+              <div>
+                <h1 className="text-3xl font-semibold tracking-tight">Spotify Insights</h1>
+                <p className="text-slate-300 mt-1">Your listening analytics, powered by Spotify.</p>
+              </div>
             </div>
             <nav className="flex items-center gap-3">
               {!mounted || sessionLoading ? (
@@ -99,12 +109,12 @@ export default function Home() {
               ) : userName ? (
                 <div className="flex items-center gap-3">
                   {userAvatar ? (
-                    <Image src={userAvatar} alt={userName ?? "avatar"} width={32} height={32} className="rounded-full object-cover border border-slate-600" />
+                    <Image src={userAvatar} alt={userName ?? "avatar"} width={32} height={32} className="rounded-full object-cover border border-[#1b3a40]" />
                   ) : null}
                   <span className="text-sm text-slate-200">Logged in as <strong className="text-white">{userName}</strong></span>
                   <a
                     href="/dashboard"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-md text-sm font-medium border border-slate-600"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#12323a] hover:bg-[#19424b] rounded-md text-sm font-medium border border-[#1b3a40] text-[#dff7f2]"
                   >
                     Dashboard
                   </a>
@@ -131,7 +141,7 @@ export default function Home() {
               ) : (
                 <a
                   href="/api/auth/login"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-black rounded-md text-sm font-medium"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#14f1b2] hover:bg-[#5bf2c6] text-[#04221d] rounded-md text-sm font-semibold shadow-md shadow-emerald-500/20"
                 >
                   Login with Spotify
                 </a>
@@ -140,14 +150,14 @@ export default function Home() {
           </header>
 
           <section className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="col-span-2 bg-slate-800/50 rounded-lg p-4">
+            <div className="col-span-2 bg-[#111f2a]/70 rounded-lg p-4 border border-[#1b3a40]">
               <h2 className="text-lg font-semibold">Quick Sync</h2>
               <p className="text-slate-300 text-sm mt-1">Fetch your latest recently played tracks and store them locally for analysis.</p>
 
               <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3">
                 <button
                   onClick={handleSync}
-                  className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 rounded-md font-medium disabled:opacity-60"
+                  className="px-4 py-2 bg-[#1dd6a7] hover:bg-[#35e6b9] text-[#04221d] rounded-md font-semibold disabled:opacity-60"
                   disabled={loading}
                 >
                   {loading ? "Syncing..." : "Sync Recently Played"}
@@ -157,7 +167,7 @@ export default function Home() {
                   onClick={() => {
                     setResult(null);
                   }}
-                  className="px-3 py-2 border border-slate-600 rounded-md text-sm"
+                  className="px-3 py-2 border border-[#2b4a50] rounded-md text-sm text-slate-200 hover:border-[#3a5c61]"
                 >
                   Clear
                 </button>
@@ -165,20 +175,20 @@ export default function Home() {
 
               <div className="mt-4">
                 <label className="text-sm text-slate-400">Result</label>
-                <div className="mt-2 bg-black/40 p-3 rounded-md text-xs font-mono max-h-48 overflow-auto text-slate-200">
+                <div className="mt-2 bg-black/40 p-3 rounded-md text-xs font-mono max-h-48 overflow-auto text-slate-200 border border-[#15252b]">
                   {result ? <pre className="whitespace-pre-wrap">{result}</pre> : <span className="text-slate-500">No results yet.</span>}
                 </div>
               </div>
             </div>
 
-            <aside className="bg-slate-800/50 rounded-lg p-4">
+            <aside className="bg-[#111f2a]/70 rounded-lg p-4 border border-[#1b3a40]">
               <h3 className="text-md font-semibold">Shortcuts</h3>
               <ul className="mt-3 space-y-2 text-sm text-slate-300">
                 <li>
-                  <a href="/dashboard" className="text-indigo-300 hover:underline">Open Dashboard</a>
+                  <a href="/dashboard" className="text-[#9ef3d4] hover:underline">Open Dashboard</a>
                 </li>
                 <li>
-                  <a href="/api/auth/login" className="text-green-300 hover:underline">Start OAuth Login</a>
+                  <a href="/api/auth/login" className="text-[#f8c64a] hover:underline">Start OAuth Login</a>
                 </li>
                 <li>
                   <button onClick={handleSync} className="text-slate-200 hover:underline">Run Sync</button>

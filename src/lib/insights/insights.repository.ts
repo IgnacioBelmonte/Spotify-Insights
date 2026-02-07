@@ -17,8 +17,13 @@ export interface TopTrack {
 
 export interface DailyListeningActivity {
   date: string; // ISO date string (YYYY-MM-DD)
-  playsCount: number;
-  minutesListened: number;
+  durationMs: number;
+  tracks: Array<{
+    trackId: string;
+    name: string;
+    artistName: string;
+    playCount: number;
+  }>;
 }
 
 /**
@@ -100,38 +105,77 @@ export async function getTopTracks(userId: string, limit: number = 10): Promise<
 }
 
 /**
- * Fetches daily listening activity for a user (last 90 days)
+ * Fetches daily listening activity for a user
  */
 export async function getDailyListeningActivity(
-  userId: string
+  userId: string,
+  timeZone?: string | null
 ): Promise<DailyListeningActivity[]> {
+  const tz = timeZone && timeZone.trim().length > 0 ? timeZone.trim() : "UTC";
   const dailyActivity = await prisma.$queryRaw<
     Array<{
       date: string;
-      plays_count: number;
-      total_minutes_listened: number;
+      total_duration_ms: number;
+      tracks: Array<{
+        trackId: string;
+        name: string;
+        artistName: string;
+        playCount: number;
+      }> | null;
     }>
   >`
+    WITH events AS (
+      SELECT DISTINCT ON (le."trackId", le."playedAt")
+        DATE(le."playedAt" AT TIME ZONE ${tz}) AS date_local,
+        le."durationMs" AS duration_ms,
+        le."trackId" AS track_id,
+        le."playedAt" AS played_at
+      FROM "ListeningEvent" le
+      WHERE le."userId" = ${userId}
+      ORDER BY le."trackId", le."playedAt"
+    ),
+    daily_totals AS (
+      SELECT
+        e.date_local,
+        COALESCE(CAST(SUM(CAST(e.duration_ms AS BIGINT)) AS BIGINT), 0) AS total_duration_ms
+      FROM events e
+      GROUP BY e.date_local
+    ),
+    track_counts AS (
+      SELECT
+        e.date_local,
+        e.track_id,
+        t."name" AS track_name,
+        t."artistName" AS artist_name,
+        COUNT(DISTINCT e.played_at)::INTEGER AS play_count
+      FROM events e
+      JOIN "Track" t ON e.track_id = t."id"
+      GROUP BY e.date_local, e.track_id, t."name", t."artistName"
+    )
     SELECT
-      CAST(DATE(le."playedAt") AS Date) AS date,
-      COUNT(le."id")::INTEGER AS plays_count,
+      CAST(dt.date_local AS Date) AS date,
+      dt.total_duration_ms,
       COALESCE(
-        CAST(
-          SUM(CAST(t."durationMs" AS BIGINT)) / 60000 AS INTEGER
-        ),
-        0
-      ) AS total_minutes_listened
-    FROM "ListeningEvent" le
-    JOIN "Track" t ON le."trackId" = t."id"
-    WHERE le."userId" = ${userId}
-      AND le."playedAt" >= CURRENT_DATE - INTERVAL '90 days'
-    GROUP BY DATE(le."playedAt")
+        JSON_AGG(
+          JSON_BUILD_OBJECT(
+            'trackId', tc.track_id,
+            'name', tc.track_name,
+            'artistName', tc.artist_name,
+            'playCount', tc.play_count
+          )
+          ORDER BY tc.play_count DESC, tc.track_name ASC
+        ) FILTER (WHERE tc.track_id IS NOT NULL),
+        '[]'::json
+      ) AS tracks
+    FROM daily_totals dt
+    LEFT JOIN track_counts tc ON tc.date_local = dt.date_local
+    GROUP BY dt.date_local, dt.total_duration_ms
     ORDER BY date DESC
   `;
 
   return dailyActivity.map((activity) => ({
     date: activity.date,
-    playsCount: activity.plays_count,
-    minutesListened: activity.total_minutes_listened,
+    durationMs: Number(activity.total_duration_ms),
+    tracks: Array.isArray(activity.tracks) ? activity.tracks : [],
   }));
 }

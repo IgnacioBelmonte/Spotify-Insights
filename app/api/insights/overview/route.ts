@@ -20,6 +20,9 @@ function extractUserIdFromSession(req: NextRequest): string | null {
 export async function GET(req: NextRequest) {
   try {
     const userId = extractUserIdFromSession(req);
+    const timeZoneParam = req.nextUrl.searchParams.get("tz");
+    const timeZone =
+      timeZoneParam && timeZoneParam.trim().length > 0 ? timeZoneParam.trim() : "UTC";
 
     if (!userId) {
       return NextResponse.json(
@@ -28,7 +31,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const insights = await getInsightsOverview(userId);
+    const insights = await getInsightsOverview(userId, timeZone);
 
     return NextResponse.json(insights, {
       status: 200,

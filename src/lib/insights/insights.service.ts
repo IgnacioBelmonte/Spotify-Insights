@@ -21,13 +21,14 @@ export interface InsightsOverviewDTO {
  * Orchestrates repository calls and returns structured data
  */
 export async function getInsightsOverview(
-  userId: string
+  userId: string,
+  timeZone?: string | null
 ): Promise<InsightsOverviewDTO> {
   // Fetch all data in parallel for better performance
   const [stats, topTracks, dailyActivity] = await Promise.all([
     getTotalListeningStats(userId),
     getTopTracks(userId),
-    getDailyListeningActivity(userId),
+    getDailyListeningActivity(userId, timeZone),
   ]);
 
   return {

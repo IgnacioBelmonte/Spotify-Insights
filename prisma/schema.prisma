@@ -70,10 +70,12 @@ model ListeningEvent {
   userId    String
   trackId   String
   playedAt  DateTime
+  durationMs Int?
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
 
   @@index([userId, playedAt])
   @@index([trackId])
+  @@unique([userId, playedAt])
 }

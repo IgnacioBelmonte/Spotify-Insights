@@ -50,32 +50,75 @@ export function UserMenu({ displayName, imageUrl, onLogout }: UserMenuProps) {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-700/50 transition-colors"
+        className="group flex items-center gap-3 px-3 py-2 rounded-2xl border border-[#1c3a40] bg-[#0b1820] hover:bg-[#102631] hover:border-[#2a5a5f] transition-all shadow-sm shadow-emerald-500/10"
       >
-        {imageUrl ? (
-          <Image
-            src={imageUrl}
-            alt={displayName ?? "avatar"}
-            width={32}
-            height={32}
-            className="rounded-full object-cover border border-slate-600"
+        <div className="relative">
+          {imageUrl ? (
+            <Image
+              src={imageUrl}
+              alt={displayName ?? "avatar"}
+              width={36}
+              height={36}
+              className="rounded-full object-cover border border-[#1b3a40] ring-2 ring-[#0d2a2e] group-hover:ring-[#1dd6a7]/40 transition-all"
+            />
+          ) : (
+            <div className="w-9 h-9 rounded-full bg-[#1c3a41] text-[#c6f5e5] flex items-center justify-center text-xs font-semibold border border-[#1b3a40] ring-2 ring-[#0d2a2e] group-hover:ring-[#1dd6a7]/40 transition-all">
+              {displayName?.[0]?.toUpperCase() ?? "U"}
+            </div>
+          )}
+          <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#14f1b2] ring-2 ring-[#0b1820]" />
+        </div>
+        <div className="hidden sm:flex flex-col items-start leading-tight">
+          <span className="text-sm font-semibold text-white">
+            {displayName || "Usuario"}
+          </span>
+          <span className="text-[11px] text-[#9cc9c4]">Cuenta activa</span>
+        </div>
+        <svg
+          viewBox="0 0 20 20"
+          className={`ml-1 hidden sm:block h-4 w-4 text-[#9cc9c4] transition-transform ${isOpen ? "rotate-180" : ""}`}
+          aria-hidden="true"
+        >
+          <path
+            d="M5 7.5L10 12.5L15 7.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           />
-        ) : (
-          <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center text-xs font-semibold">
-            {displayName?.[0]?.toUpperCase() ?? "U"}
-          </div>
-        )}
-        <span className="text-sm font-medium hidden sm:inline">{displayName}</span>
+        </svg>
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-lg z-50">
-          <div className="p-3 border-b border-slate-700">
-            <p className="text-sm font-semibold text-white">{displayName}</p>
+        <div className="absolute right-0 mt-3 w-60 bg-[#0f1b24] border border-[#1b3a40] rounded-2xl shadow-xl shadow-emerald-500/10 z-50 overflow-hidden">
+          <div className="p-4 border-b border-[#1b3a40]">
+            <div className="flex items-center gap-3">
+              {imageUrl ? (
+                <Image
+                  src={imageUrl}
+                  alt={displayName ?? "avatar"}
+                  width={40}
+                  height={40}
+                  className="rounded-full object-cover border border-[#1b3a40]"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-[#1c3a41] text-[#c6f5e5] flex items-center justify-center text-xs font-semibold border border-[#1b3a40]">
+                  {displayName?.[0]?.toUpperCase() ?? "U"}
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-white truncate">
+                  {displayName || "Usuario"}
+                </p>
+                <p className="text-xs text-[#9cc9c4]">Cuenta activa</p>
+              </div>
+            </div>
           </div>
+
           <button
             onClick={handleLogout}
-            className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-slate-700/50 hover:text-red-300 transition-colors"
+            className="w-full text-left px-4 py-3 text-sm text-red-300 hover:bg-red-900/30 hover:text-red-200 transition-colors"
           >
             Logout
           </button>
