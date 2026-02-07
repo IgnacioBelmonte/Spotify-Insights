@@ -1,7 +1,7 @@
 'use client'
 
 import ReactECharts from 'echarts-for-react'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import * as echarts from 'echarts'
 
 type Props = {
@@ -9,6 +9,16 @@ type Props = {
 }
 
 function formatDate(dateString: string): string {
+  const date = new Date(dateString)
+  const options: Intl.DateTimeFormatOptions = {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  }
+  return date.toLocaleDateString('es-ES', options).toUpperCase()
+}
+
+function formatDateMobile(dateString: string): string {
   const date = new Date(dateString)
   const options: Intl.DateTimeFormatOptions = {
     weekday: 'short',
@@ -33,16 +43,27 @@ function formatDurationMs(durationMs: number): string {
 }
 
 export default function DailyListeningChart({ data }: Props) {
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.innerWidth < 640
+  })
+
   useEffect(() => {
     console.log("DailyListeningChart props:", { data })
-  }, [data])
+  }, [data, isMobile])
+
+  useEffect(() => {
+    const update = () => setIsMobile(window.innerWidth < 640)
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
 
   const option = useMemo(() => {
-    const xAxisData = data.map((item) => formatDate(item.date))
+    const xAxisData = data.map((item) => (isMobile ? formatDateMobile(item.date) : formatDate(item.date)))
     const seriesData = data.map((item) => item.durationMs)
 
-    return {
-      tooltip: {
+    const tooltipBase = {
         trigger: 'axis',
         axisPointer: {
           type: 'shadow',
@@ -54,6 +75,7 @@ export default function DailyListeningChart({ data }: Props) {
           color: '#e6f3f1',
           fontSize: 12,
         },
+        extraCssText: 'max-width: 280px; overflow: hidden;',
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         formatter: (params: any) => {
           if (Array.isArray(params) && params.length > 0) {
@@ -62,11 +84,11 @@ export default function DailyListeningChart({ data }: Props) {
             const dataIndex = params[0].dataIndex as number
             const dayTracks = data[dataIndex]?.tracks ?? []
             const tracksHtml = dayTracks.length
-              ? `<div style="margin-top: 8px; color: #d8f4ec;">
+              ? `<div style="margin-top: 8px; color: #d8f4ec; max-width: 240px;">
                    ${dayTracks
                      .map(
                        (track) =>
-                         `<div>• ${track.name} <span style="color:#9cc9c4">— ${track.artistName} (${track.playCount})</span></div>`
+                         `<div style="white-space: normal; word-break: break-word; line-height: 1.25;">• ${track.name} <span style="color:#9cc9c4">— ${track.artistName} (${track.playCount})</span></div>`
                      )
                      .join("")}
                  </div>`
@@ -79,21 +101,39 @@ export default function DailyListeningChart({ data }: Props) {
           }
           return ''
         },
-      },
+      }
+
+    const tooltip = isMobile
+      ? {
+          ...tooltipBase,
+          position: (pos: number[], _params: unknown, _dom: unknown, _rect: unknown, size: any) => {
+            const viewWidth = size?.viewSize?.[0] ?? 0
+            const viewHeight = size?.viewSize?.[1] ?? 0
+            const boxWidth = size?.contentSize?.[0] ?? 0
+            const boxHeight = size?.contentSize?.[1] ?? 0
+            const x = Math.max(8, (viewWidth - boxWidth) / 2)
+            const y = Math.max(8, (viewHeight - boxHeight) / 2)
+            return [x, y]
+          },
+        }
+      : tooltipBase
+
+    return {
+      tooltip,
       grid: {
-        left: '60px',
-        right: '30px',
-        top: '30px',
-        bottom: '80px',
+        left: isMobile ? '40px' : '60px',
+        right: isMobile ? '12px' : '30px',
+        top: isMobile ? '20px' : '30px',
+        bottom: isMobile ? '90px' : '80px',
         containLabel: true,
       },
       xAxis: {
         type: 'category',
         data: xAxisData,
         axisLabel: {
-          interval: 0,
-          rotate: 0,
-          fontSize: 12,
+          interval: isMobile ? 'auto' : 0,
+          rotate: isMobile ? 55 : 0,
+          fontSize: isMobile ? 10 : 12,
           color: '#8db0ad',
         },
         axisLine: {
@@ -149,7 +189,7 @@ export default function DailyListeningChart({ data }: Props) {
             },
           },
           label: {
-            show: true,
+            show: !isMobile,
             position: 'top',
             formatter: (params: any) => formatDurationMs(params.value),
             color: '#9cc9c4',
@@ -161,15 +201,18 @@ export default function DailyListeningChart({ data }: Props) {
       animationDuration: 1000,
       animationEasing: 'cubicOut',
     }
-  }, [data])
+  }, [data, isMobile])
 
   return (
-    <div className="w-full rounded-lg bg-[#0b1820] p-6 border border-[#1b3a40] shadow-lg shadow-emerald-500/5">
+    <div className="w-screen sm:w-full max-w-none sm:max-w-full relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] sm:left-auto sm:right-auto sm:ml-0 sm:mr-0 rounded-none sm:rounded-lg bg-[#0b1820] p-4 sm:p-6 border-0 sm:border border-[#1b3a40] shadow-lg shadow-emerald-500/5">
       <h2 className="mb-4 text-lg font-semibold text-[#dff7f2]">Actividad de Escucha Diaria</h2>
-      <div className="rounded-lg border border-[#16313a] bg-gradient-to-br from-[#0e1f28] to-[#0b1820] p-4">
+      <div className="rounded-none sm:rounded-lg border-0 sm:border border-[#16313a] bg-gradient-to-br from-[#0e1f28] to-[#0b1820] p-3 sm:p-4">
         <ReactECharts 
+          key={isMobile ? 'mobile' : 'desktop'}
           option={option} 
-          style={{ height: '450px', width: '100%' }}
+          notMerge={true}
+          lazyUpdate={true}
+          style={{ height: isMobile ? '320px' : '450px', width: '100%' }}
           opts={{ renderer: 'canvas' }}
         />
       </div>
