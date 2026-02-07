@@ -73,9 +73,14 @@ export function InsightsOverview() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-linear-to-b from-[#06151a] via-[#0b1f2a] to-[#0a0f14] text-[#e6f3f1] p-6">
-        <div className="max-w-6xl mx-auto">
-          <p className="text-center text-slate-300">Loading insights...</p>
+      <main className="min-h-screen bg-[#050b10] text-[#e6f3f1] relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(29,214,167,0.12),_transparent_55%)]" />
+        <div className="absolute -top-48 right-[-10%] h-[360px] w-[360px] rounded-full bg-emerald-500/10 blur-3xl animate-pulse-soft" />
+        <div className="absolute -bottom-48 left-[-10%] h-[420px] w-[420px] rounded-full bg-cyan-500/10 blur-3xl animate-pulse-soft" />
+        <div className="relative mx-auto max-w-6xl px-6 py-16">
+          <div className="rounded-2xl border border-[#1b3a40] bg-[#0f1b24]/80 p-8 text-center shadow-lg shadow-emerald-500/10 animate-fade-up">
+            <p className="text-slate-300">Loading insights...</p>
+          </div>
         </div>
       </main>
     );
@@ -83,9 +88,12 @@ export function InsightsOverview() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-linear-to-b from-[#06151a] via-[#0b1f2a] to-[#0a0f14] text-[#e6f3f1] p-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="bg-red-950/40 border border-red-800 rounded-lg p-4 text-red-200">
+      <main className="min-h-screen bg-[#050b10] text-[#e6f3f1] relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(29,214,167,0.12),_transparent_55%)]" />
+        <div className="absolute -top-48 right-[-10%] h-[360px] w-[360px] rounded-full bg-emerald-500/10 blur-3xl animate-pulse-soft" />
+        <div className="absolute -bottom-48 left-[-10%] h-[420px] w-[420px] rounded-full bg-cyan-500/10 blur-3xl animate-pulse-soft" />
+        <div className="relative mx-auto max-w-6xl px-6 py-16">
+          <div className="bg-red-950/40 border border-red-800 rounded-2xl p-6 text-red-200 shadow-lg animate-fade-up">
             Error: {error}
           </div>
         </div>
@@ -95,117 +103,175 @@ export function InsightsOverview() {
 
   if (!insights) {
     return (
-      <main className="min-h-screen bg-linear-to-b from-[#06151a] via-[#0b1f2a] to-[#0a0f14] text-[#e6f3f1] p-6">
-        <div className="max-w-6xl mx-auto">
-          <p className="text-center text-slate-300">No insights data available</p>
+      <main className="min-h-screen bg-[#050b10] text-[#e6f3f1] relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(29,214,167,0.12),_transparent_55%)]" />
+        <div className="absolute -top-48 right-[-10%] h-[360px] w-[360px] rounded-full bg-emerald-500/10 blur-3xl animate-pulse-soft" />
+        <div className="absolute -bottom-48 left-[-10%] h-[420px] w-[420px] rounded-full bg-cyan-500/10 blur-3xl animate-pulse-soft" />
+        <div className="relative mx-auto max-w-6xl px-6 py-16">
+          <div className="rounded-2xl border border-[#1b3a40] bg-[#0f1b24]/80 p-8 text-center text-slate-300 shadow-lg animate-fade-up">
+            No insights data available
+          </div>
         </div>
       </main>
     );
   }
 
   const { stats, topTracks, dailyActivity } = insights;
+  const maxPlays = topTracks.reduce((max, track) => Math.max(max, track.playCount), 1);
+  const statCards = [
+    {
+      label: "Total Minutes",
+      value: stats.totalMinutesListened.toLocaleString(),
+      caption: "min listened",
+    },
+    {
+      label: "Total Plays",
+      value: stats.totalPlays.toLocaleString(),
+      caption: "plays tracked",
+    },
+    {
+      label: "Unique Tracks",
+      value: stats.distinctTracksCount.toLocaleString(),
+      caption: "songs discovered",
+    },
+    {
+      label: "Unique Artists",
+      value: stats.distinctArtistsCount.toLocaleString(),
+      caption: "artists explored",
+    },
+  ];
 
   return (
-    <main className="min-h-screen bg-linear-to-b from-[#06151a] via-[#0b1f2a] to-[#0a0f14] text-[#e6f3f1] p-6" suppressHydrationWarning>
-      <div className="max-w-6xl mx-auto space-y-6">
-        <section className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-[#0f1b24]/85 border border-[#1b3a40] rounded-lg p-4 shadow-lg shadow-emerald-500/5">
-          <div>
-            <h2 className="text-lg font-semibold">Actualiza tu base de datos</h2>
-            <p className="text-sm text-[#9cc9c4]">Sincroniza tus últimos escuchados desde Spotify.</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleSync}
-              disabled={syncing}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-[#14f1b2] hover:bg-[#5bf2c6] text-[#04221d] font-semibold shadow-md shadow-emerald-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {syncing ? "Actualizando..." : "Actualizar datos"}
-            </button>
-            <button
-              onClick={() => setSyncMessage(null)}
-              className="px-3 py-2 border border-[#2b4a50] rounded-md text-sm text-slate-200 hover:border-[#3a5c61]"
-            >
-              Limpiar
-            </button>
-          </div>
-          {syncMessage ? (
-            <div className="sm:col-span-2 text-sm text-[#dff7f2] bg-[#0b1820] border border-[#1b3a40] rounded-md px-3 py-2">
-              {syncMessage}
+    <main className="min-h-screen bg-[#050b10] text-[#e6f3f1] relative overflow-hidden" suppressHydrationWarning>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(29,214,167,0.14),_transparent_55%)]" />
+      <div className="absolute -top-56 right-[-10%] h-[420px] w-[420px] rounded-full bg-emerald-500/10 blur-3xl animate-pulse-soft" />
+      <div className="absolute -bottom-48 left-[-10%] h-[520px] w-[520px] rounded-full bg-cyan-500/10 blur-3xl animate-pulse-soft" />
+
+      <div className="relative mx-auto max-w-6xl px-6 py-10 space-y-8">
+        <section className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] items-center">
+          <div className="space-y-5 animate-fade-up">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-4 py-1 text-xs uppercase tracking-[0.2em] text-emerald-200">
+              Dashboard
             </div>
-          ) : null}
-        </section>
-
-        {/* Stats Cards */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-[#0f1b24]/80 border border-[#1b3a40] rounded-lg p-6 shadow-lg shadow-emerald-500/5">
-            <p className="text-slate-300 text-sm font-medium">Total Minutes</p>
-            <p className="text-3xl font-bold text-white mt-2">
-              {stats.totalMinutesListened.toLocaleString()}
+            <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight leading-[1.05]">
+              Your listening, amplified
+              <span className="block text-emerald-300">every single day.</span>
+            </h1>
+            <p className="text-slate-300 text-base sm:text-lg max-w-xl">
+              A living snapshot of your Spotify habits. Track momentum, discover patterns, and stay in control.
             </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={handleSync}
+                disabled={syncing}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#14f1b2] hover:bg-[#5bf2c6] text-[#04221d] font-semibold shadow-lg shadow-emerald-500/30 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {syncing ? "Actualizando..." : "Sincronizar ahora"}
+              </button>
+              <button
+                onClick={() => setSyncMessage(null)}
+                className="px-4 py-2 rounded-full border border-[#2b4a50] text-sm text-slate-200 hover:border-[#3a5c61]"
+              >
+                Limpiar estado
+              </button>
+            </div>
+            {syncMessage ? (
+              <div className="text-sm text-[#dff7f2] bg-[#0b1820] border border-[#1b3a40] rounded-full px-4 py-2 w-fit">
+                {syncMessage}
+              </div>
+            ) : null}
           </div>
 
-          <div className="bg-[#0f1b24]/80 border border-[#1b3a40] rounded-lg p-6 shadow-lg shadow-emerald-500/5">
-            <p className="text-slate-300 text-sm font-medium">Total Plays</p>
-            <p className="text-3xl font-bold text-white mt-2">
-              {stats.totalPlays.toLocaleString()}
-            </p>
-          </div>
-
-          <div className="bg-[#0f1b24]/80 border border-[#1b3a40] rounded-lg p-6 shadow-lg shadow-emerald-500/5">
-            <p className="text-slate-300 text-sm font-medium">Unique Tracks</p>
-            <p className="text-3xl font-bold text-white mt-2">
-              {stats.distinctTracksCount.toLocaleString()}
-            </p>
-          </div>
-
-          <div className="bg-[#0f1b24]/80 border border-[#1b3a40] rounded-lg p-6 shadow-lg shadow-emerald-500/5">
-            <p className="text-slate-300 text-sm font-medium">Unique Artists</p>
-            <p className="text-3xl font-bold text-white mt-2">
-              {stats.distinctArtistsCount.toLocaleString()}
-            </p>
-          </div>
-        </section>
-
-        {/* Top Tracks */}
-        <section className="bg-[#0f1b24]/85 border border-[#1b3a40] rounded-lg p-6 shadow-lg shadow-emerald-500/5">
-          <h2 className="text-2xl font-bold mb-4">Top Tracks</h2>
-          <div className="space-y-2">
-            {topTracks.length > 0 ? (
-              topTracks.map((track, idx) => (
-                <div
-                  key={track.id}
-                  className="flex items-center justify-between p-3 bg-[#12222c]/70 rounded-lg hover:bg-[#162a35] transition-colors border border-transparent hover:border-[#1b3a40]"
-                >
-                  <div className="flex-1">
-                    <p className="font-semibold text-white">
-                      {idx + 1}. {track.name}
-                    </p>
-                    <p className="text-sm text-slate-400">{track.artistName}</p>
-                  </div>
-                  <div className="text-right text-sm text-slate-300">
-                    <p>{track.playCount} plays</p>
-                    <p className="text-xs text-slate-500">
-                      {track.totalMinutesListened} min
-                    </p>
-                  </div>
+          <div className="relative rounded-3xl border border-[#1b3a40] bg-[#0f1b24]/80 p-6 shadow-2xl shadow-emerald-500/10 animate-float">
+            <div className="absolute -inset-4 rounded-full bg-emerald-400/10 blur-2xl" />
+            <div className="relative space-y-4">
+              <h2 className="text-xl font-semibold">Sync Spotlight</h2>
+              <p className="text-sm text-slate-300">
+                Fresh data fuels better insights. Keep your history updated for the cleanest trends.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-2xl border border-[#1b3a40] bg-[#0b1820]/80 p-4">
+                  <p className="text-xs text-slate-400 uppercase tracking-wide">Timezone</p>
+                  <p className="text-sm text-slate-200 mt-1">{timeZone}</p>
                 </div>
-              ))
-            ) : (
-              <p className="text-slate-400 text-center py-4">No tracks available</p>
-            )}
+                <div className="rounded-2xl border border-[#1b3a40] bg-[#0b1820]/80 p-4">
+                  <p className="text-xs text-slate-400 uppercase tracking-wide">Status</p>
+                  <p className="text-sm text-slate-200 mt-1">{syncing ? "Syncing" : "Ready"}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* Daily Activity */}
-        <section className="bg-[#0f1b24]/85 border border-[#1b3a40] rounded-lg p-6 shadow-lg shadow-emerald-500/5">
-          <h2 className="text-2xl font-bold mb-4">Daily Activity</h2>
-        <DailyListeningChart
-          data={dailyActivity.map((day) => ({
-            date: day.date,
-            durationMs: day.durationMs,
-            tracks: day.tracks ?? [],
-          }))}
-        />
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {statCards.map((stat, index) => (
+            <div
+              key={stat.label}
+              className="group relative overflow-hidden rounded-2xl border border-[#1b3a40] bg-[#0f1b24]/80 p-6 shadow-lg shadow-emerald-500/5 transition duration-300 hover:-translate-y-1 hover:shadow-emerald-500/20 animate-fade-up"
+              style={{ animationDelay: `${index * 80}ms` }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-cyan-500/10 opacity-0 transition duration-300 group-hover:opacity-100" />
+              <div className="relative">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{stat.label}</p>
+                <p className="text-3xl font-semibold text-white mt-3">{stat.value}</p>
+                <p className="text-xs text-slate-400 mt-2">{stat.caption}</p>
+              </div>
+            </div>
+          ))}
+        </section>
+
+        <section className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-6">
+          <div className="bg-[#0f1b24]/85 border border-[#1b3a40] rounded-2xl p-6 shadow-lg shadow-emerald-500/10">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-semibold">Top Tracks</h2>
+              <span className="text-xs text-slate-400 uppercase tracking-wide">Your repeaters</span>
+            </div>
+            <div className="space-y-3">
+              {topTracks.length > 0 ? (
+                topTracks.map((track, idx) => (
+                  <div
+                    key={track.id}
+                    className="rounded-xl border border-transparent bg-[#12222c]/70 p-4 transition hover:border-[#1b3a40] hover:bg-[#162a35]"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-sm text-emerald-200 font-semibold">#{idx + 1}</p>
+                        <p className="font-semibold text-white">{track.name}</p>
+                        <p className="text-sm text-slate-400">{track.artistName}</p>
+                      </div>
+                      <div className="text-right text-sm text-slate-300">
+                        <p>{track.playCount} plays</p>
+                        <p className="text-xs text-slate-500">{track.totalMinutesListened} min</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 h-1.5 rounded-full bg-[#0b1820] overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-emerald-400 to-cyan-400"
+                        style={{ width: `${Math.round((track.playCount / maxPlays) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-slate-400 text-center py-4">No tracks available</p>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-[#0f1b24]/85 border border-[#1b3a40] rounded-2xl p-6 shadow-lg shadow-emerald-500/10">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-semibold">Daily Activity</h2>
+              <span className="text-xs text-slate-400 uppercase tracking-wide">Time spent</span>
+            </div>
+            <DailyListeningChart
+              data={dailyActivity.map((day) => ({
+                date: day.date,
+                durationMs: day.durationMs,
+                tracks: day.tracks ?? [],
+              }))}
+              variant="embedded"
+            />
+          </div>
         </section>
       </div>
     </main>

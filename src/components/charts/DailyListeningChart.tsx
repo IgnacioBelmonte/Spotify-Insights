@@ -5,7 +5,8 @@ import { useEffect, useMemo, useState } from 'react'
 import * as echarts from 'echarts'
 
 type Props = {
-    data: { date: string; durationMs: number; tracks: { trackId: string; name: string; artistName: string; playCount: number }[] }[]
+  data: { date: string; durationMs: number; tracks: { trackId: string; name: string; artistName: string; playCount: number }[] }[]
+  variant?: "standalone" | "embedded"
 }
 
 function formatDate(dateString: string): string {
@@ -42,15 +43,12 @@ function formatDurationMs(durationMs: number): string {
   return `${hours}h ${mins}m`
 }
 
-export default function DailyListeningChart({ data }: Props) {
+export default function DailyListeningChart({ data, variant = "standalone" }: Props) {
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === 'undefined') return false
     return window.innerWidth < 640
   })
-
-  useEffect(() => {
-    console.log("DailyListeningChart props:", { data })
-  }, [data, isMobile])
+  const isEmbedded = variant === "embedded"
 
   useEffect(() => {
     const update = () => setIsMobile(window.innerWidth < 640)
@@ -203,16 +201,32 @@ export default function DailyListeningChart({ data }: Props) {
     }
   }, [data, isMobile])
 
+  const height = isMobile ? (isEmbedded ? "300px" : "320px") : (isEmbedded ? "380px" : "450px")
+
   return (
-    <div className="w-screen sm:w-full max-w-none sm:max-w-full relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] sm:left-auto sm:right-auto sm:ml-0 sm:mr-0 rounded-none sm:rounded-lg bg-[#0b1820] p-4 sm:p-6 border-0 sm:border border-[#1b3a40] shadow-lg shadow-emerald-500/5">
-      <h2 className="mb-4 text-lg font-semibold text-[#dff7f2]">Actividad de Escucha Diaria</h2>
-      <div className="rounded-none sm:rounded-lg border-0 sm:border border-[#16313a] bg-gradient-to-br from-[#0e1f28] to-[#0b1820] p-3 sm:p-4">
-        <ReactECharts 
-          key={isMobile ? 'mobile' : 'desktop'}
-          option={option} 
+    <div
+      className={
+        isEmbedded
+          ? "w-full"
+          : "w-screen sm:w-full max-w-none sm:max-w-full relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] sm:left-auto sm:right-auto sm:ml-0 sm:mr-0 rounded-none sm:rounded-lg bg-[#0b1820] p-4 sm:p-6 border-0 sm:border border-[#1b3a40] shadow-lg shadow-emerald-500/5"
+      }
+    >
+      {!isEmbedded ? (
+        <h2 className="mb-4 text-lg font-semibold text-[#dff7f2]">Actividad de Escucha Diaria</h2>
+      ) : null}
+      <div
+        className={
+          isEmbedded
+            ? "rounded-2xl border border-[#16313a] bg-gradient-to-br from-[#0e1f28] to-[#0b1820] p-3"
+            : "rounded-none sm:rounded-lg border-0 sm:border border-[#16313a] bg-gradient-to-br from-[#0e1f28] to-[#0b1820] p-3 sm:p-4"
+        }
+      >
+        <ReactECharts
+          key={`${isMobile ? 'mobile' : 'desktop'}-${variant}`}
+          option={option}
           notMerge={true}
           lazyUpdate={true}
-          style={{ height: isMobile ? '320px' : '450px', width: '100%' }}
+          style={{ height, width: '100%' }}
           opts={{ renderer: 'canvas' }}
         />
       </div>
