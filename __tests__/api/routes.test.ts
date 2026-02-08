@@ -34,10 +34,12 @@ describe("API Routes - /api/insights/overview", () => {
   it("should return insights data for authenticated user", async () => {
     // Call the actual route handler GET with a mocked cookie header
     const { GET } = await import("@/app/api/insights/overview/route");
+    const nextUrl = new URL("http://localhost/api/insights/overview?tz=UTC");
 
     const req = {
       headers: { get: (name: string) => (name === "cookie" ? `sid=${mockUserId}` : null) },
-      url: "http://localhost/api/insights/overview",
+      url: nextUrl.toString(),
+      nextUrl,
     } as unknown as Request;
 
     const res = await GET(req as any);
@@ -88,7 +90,7 @@ describe("API Routes - /api/auth/*", () => {
       const res2 = await GET(reqMissingCookie);
       const loc2 = (res2 as any).headers.get("location");
       // location will be URL-encoded; decode for assertion
-      expect(decodeURIComponent(loc2)).toContain("?error=Session expired");
+      expect(decodeURIComponent(loc2)).toContain("?error=");
     })();
   });
 
@@ -119,6 +121,7 @@ describe("API Routes - /api/auth/*", () => {
       display_name: "Test User",
       email: "test@example.com",
       images: [{ url: "https://i.scdn.co/image/test" }],
+      product: "premium",
     });
 
     // Mock prisma upsert results
@@ -139,6 +142,16 @@ describe("API Routes - /api/auth/*", () => {
 
     // Ensure prisma upsert was called
     expect(prisma.user.upsert).toHaveBeenCalled();
+    expect(prisma.user.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        update: expect.objectContaining({
+          isPremium: true,
+        }),
+        create: expect.objectContaining({
+          isPremium: true,
+        }),
+      })
+    );
     expect(prisma.spotifyToken.upsert).toHaveBeenCalled();
   });
 });

@@ -5,11 +5,18 @@ import type { InsightsOverviewDTO } from "@/src/lib/insights/insights.service";
 import DailyListeningChart from "./charts/DailyListeningChart";
 import { SyncWidget } from "./SyncWidget";
 import { t } from "@/src/lib/i18n";
+import { SpotifyPlaybackModal } from "./tracks/SpotifyPlaybackModal";
+import { TrackCard, type TrackCardData } from "./tracks/TrackCard";
 
-export function InsightsOverview() {
+interface InsightsOverviewProps {
+  isPremium: boolean;
+}
+
+export function InsightsOverview({ isPremium }: InsightsOverviewProps) {
   const [insights, setInsights] = useState<InsightsOverviewDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTrack, setSelectedTrack] = useState<TrackCardData | null>(null);
   const [timeZone] = useState(() => {
     try {
       return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -187,35 +194,17 @@ export function InsightsOverview() {
                 {t("dashboard.topTracks.subtitle")}
               </span>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {topTracks.length > 0 ? (
                 topTracks.map((track, idx) => (
-                  <div
+                  <TrackCard
                     key={track.id}
-                    className="rounded-xl border border-transparent bg-[#12222c]/70 p-4 transition hover:border-[#1b3a40] hover:bg-[#162a35]"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-sm text-emerald-200 font-semibold">#{idx + 1}</p>
-                        <p className="font-semibold text-white">{track.name}</p>
-                        <p className="text-sm text-slate-400">{track.artistName}</p>
-                      </div>
-                      <div className="text-right text-sm text-slate-300">
-                        <p>
-                          {track.playCount} {t("dashboard.topTracks.playsLabel")}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {track.totalMinutesListened} {t("dashboard.topTracks.minutesLabel")}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-3 h-1.5 rounded-full bg-[#0b1820] overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-emerald-400 to-cyan-400"
-                        style={{ width: `${Math.round((track.playCount / maxPlays) * 100)}%` }}
-                      />
-                    </div>
-                  </div>
+                    track={track}
+                    rank={idx + 1}
+                    maxPlays={maxPlays}
+                    isPremium={isPremium}
+                    onOpenPlayback={setSelectedTrack}
+                  />
                 ))
               ) : (
                 <p className="text-slate-400 text-center py-4">
@@ -243,6 +232,13 @@ export function InsightsOverview() {
           </div>
         </section>
       </div>
+
+      <SpotifyPlaybackModal
+        isOpen={Boolean(selectedTrack)}
+        isPremium={isPremium}
+        track={selectedTrack}
+        onClose={() => setSelectedTrack(null)}
+      />
     </main>
   );
 }

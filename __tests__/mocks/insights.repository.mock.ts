@@ -2,5 +2,11 @@
 export const getTotalListeningStats = jest.fn();
 export const getTopTracks = jest.fn();
 export const getDailyListeningActivity = jest.fn();
+export const getUserLastSyncedAt = jest.fn();
 
-export default { getTotalListeningStats, getTopTracks, getDailyListeningActivity };
+export default {
+  getTotalListeningStats,
+  getTopTracks,
+  getDailyListeningActivity,
+  getUserLastSyncedAt,
+};

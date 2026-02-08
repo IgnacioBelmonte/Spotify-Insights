@@ -42,6 +42,9 @@ describe("oauth.ts", () => {
       expect(url).toContain("user-read-private");
       expect(url).toContain("user-top-read");
       expect(url).toContain("user-read-recently-played");
+      expect(url).toContain("streaming");
+      expect(url).toContain("user-read-playback-state");
+      expect(url).toContain("user-modify-playback-state");
     });
 
     it("should set show_dialog to false", () => {

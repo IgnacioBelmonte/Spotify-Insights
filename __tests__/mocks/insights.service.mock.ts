@@ -13,6 +13,12 @@ export const getInsightsOverview = jest.fn().mockResolvedValue({
       artistName: "Artist 1",
       playCount: 10,
       totalMinutesListened: 180,
+      albumImageUrl: "https://i.scdn.co/image/track-1",
+      primaryArtist: {
+        id: "artist-1",
+        name: "Artist 1",
+        imageUrl: "https://i.scdn.co/image/artist-1",
+      },
     },
   ],
   dailyActivity: [
@@ -24,6 +30,7 @@ export const getInsightsOverview = jest.fn().mockResolvedValue({
       ],
     },
   ],
+  lastSyncedAt: "2026-02-08T12:00:00.000Z",
 });
 
 export default { getInsightsOverview };

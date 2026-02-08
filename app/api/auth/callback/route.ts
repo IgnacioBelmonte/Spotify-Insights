@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { exchangeCodeForToken, fetchSpotifyMe } from "@/src/lib/spotify/client";
 import { prisma } from "@/src/lib/db/prisma";
 import { t } from "@/src/lib/i18n";
+import { isSpotifyPremiumProduct } from "@/src/lib/spotify/profile";
 
 export async function GET(req: Request) {
   try {
@@ -71,12 +72,14 @@ export async function GET(req: Request) {
         displayName: me.display_name ?? undefined,
         email: me.email ?? undefined,
         imageUrl: me.images?.[0]?.url ?? undefined,
+        isPremium: isSpotifyPremiumProduct(me.product),
       },
       create: {
         spotifyUserId: me.id,
         displayName: me.display_name ?? undefined,
         email: me.email ?? undefined,
         imageUrl: me.images?.[0]?.url ?? undefined,
+        isPremium: isSpotifyPremiumProduct(me.product),
       },
     });
 

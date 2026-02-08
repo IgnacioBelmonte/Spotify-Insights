@@ -37,12 +37,13 @@ export default async function Dashboard() {
           <UserMenu
             displayName={user.displayName}
             imageUrl={user.imageUrl}
+            isPremium={user.isPremium}
           />
         </div>
       </header>
 
       {/* Main Content */}
-      <InsightsOverview />
+      <InsightsOverview isPremium={user.isPremium} />
     </>
   );
 }

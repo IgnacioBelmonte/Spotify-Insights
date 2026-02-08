@@ -6,6 +6,14 @@ type TokenResponse = {
   refresh_token?: string;
 };
 
+export interface SpotifyMeProfile {
+  id: string;
+  display_name: string | null;
+  email?: string;
+  images?: { url: string }[];
+  product?: string | null;
+}
+
 export async function exchangeCodeForToken(code: string) {
   const body = new URLSearchParams({
     grant_type: "authorization_code",
@@ -61,20 +69,16 @@ export async function fetchSpotifyMe(accessToken: string) {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   if (!r.ok) throw new Error(`Spotify /me failed: ${r.status}`);
-  return r.json() as Promise<{
-    id: string;
-    display_name: string | null;
-    email?: string;
-    images?: { url: string }[];
-  }>;
-
-};
-type RefreshResponse = {
-access_token: string;
-token_type: "Bearer";
-scope: string;
-expires_in: number;
+  return r.json() as Promise<SpotifyMeProfile>;
 }
+
+type RefreshResponse = {
+  access_token: string;
+  token_type: "Bearer";
+  scope: string;
+  expires_in: number;
+};
+
 export async function refreshAccessToken(refreshToken: string) {
   const body = new URLSearchParams({
     grant_type: "refresh_token",

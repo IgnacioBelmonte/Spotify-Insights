@@ -12,6 +12,7 @@ model User {
   displayName   String?
   email         String?
   imageUrl      String?
+  isPremium     Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   lastSyncedAt  DateTime?
@@ -40,6 +41,7 @@ model Track {
   name        String
   artistName  String
   albumName   String?
+  albumImageUrl String?
   durationMs  Int?
 
   createdAt   DateTime @default(now())
@@ -47,6 +49,32 @@ model Track {
 
   features    AudioFeatures?
   events      ListeningEvent[]
+  artists     TrackArtist[]
+}
+
+model Artist {
+  id          String   @id // Spotify Artist ID
+  name        String
+  imageUrl    String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tracks      TrackArtist[]
+}
+
+model TrackArtist {
+  trackId     String
+  artistId    String
+  position    Int
+
+  track       Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  artist      Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@id([trackId, artistId])
+  @@unique([trackId, position])
+  @@index([artistId])
+  @@index([trackId, position])
 }
 
 model AudioFeatures {

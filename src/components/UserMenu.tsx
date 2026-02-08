@@ -7,10 +7,11 @@ import { t } from "@/src/lib/i18n";
 interface UserMenuProps {
   displayName: string | null;
   imageUrl: string | null;
+  isPremium: boolean;
   onLogout?: () => void;
 }
 
-export function UserMenu({ displayName, imageUrl, onLogout }: UserMenuProps) {
+export function UserMenu({ displayName, imageUrl, isPremium, onLogout }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -70,10 +71,18 @@ export function UserMenu({ displayName, imageUrl, onLogout }: UserMenuProps) {
           <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#14f1b2] ring-2 ring-[#0b1820]" />
         </div>
         <div className="hidden sm:flex flex-col items-start leading-tight">
-          <span className="text-sm font-semibold text-white">
-            {displayName || t("userMenu.userFallback")}
+          <span className="flex items-center gap-2 text-sm font-semibold text-white">
+            <span>{displayName || t("userMenu.userFallback")}</span>
+            {isPremium ? (
+              <span className="inline-flex items-center gap-1 rounded-full border border-[#ffde80]/80 bg-gradient-to-r from-[#eab308] via-[#fcd34d] to-[#fde68a] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#3b2400] shadow-[0_0_18px_rgba(250,204,21,0.35)]">
+                <span aria-hidden="true">{"*"}</span>
+                {t("userMenu.premiumBadge")}
+              </span>
+            ) : null}
           </span>
-          <span className="text-[11px] text-[#9cc9c4]">{t("userMenu.activeAccount")}</span>
+          <span className="text-[11px] text-[#9cc9c4]">
+            {isPremium ? t("userMenu.premiumAccount") : t("userMenu.activeAccount")}
+          </span>
         </div>
         <svg
           viewBox="0 0 20 20"
@@ -112,7 +121,17 @@ export function UserMenu({ displayName, imageUrl, onLogout }: UserMenuProps) {
                 <p className="text-sm font-semibold text-white truncate">
                   {displayName || t("userMenu.userFallback")}
                 </p>
-                <p className="text-xs text-[#9cc9c4]">{t("userMenu.activeAccount")}</p>
+                <div className="mt-0.5 flex items-center gap-2">
+                  <p className="text-xs text-[#9cc9c4]">
+                    {isPremium ? t("userMenu.premiumAccount") : t("userMenu.activeAccount")}
+                  </p>
+                  {isPremium ? (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-[#ffde80]/80 bg-gradient-to-r from-[#eab308] via-[#fcd34d] to-[#fde68a] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#3b2400]">
+                      <span aria-hidden="true">{"*"}</span>
+                      {t("userMenu.premiumBadge")}
+                    </span>
+                  ) : null}
+                </div>
               </div>
             </div>
           </div>

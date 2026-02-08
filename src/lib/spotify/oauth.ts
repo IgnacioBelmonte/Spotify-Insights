@@ -5,6 +5,9 @@ export const SPOTIFY_SCOPES = [
   "user-read-private",
   "user-top-read",
   "user-read-recently-played",
+  "streaming",
+  "user-read-playback-state",
+  "user-modify-playback-state",
 ].join(" ");
 
 export function makeSpotifyAuthUrl(state: string) {

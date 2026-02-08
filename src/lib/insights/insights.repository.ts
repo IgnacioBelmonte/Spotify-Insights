@@ -13,6 +13,12 @@ export interface TopTrack {
   artistName: string;
   playCount: number;
   totalMinutesListened: number;
+  albumImageUrl: string | null;
+  primaryArtist: {
+    id: string;
+    name: string;
+    imageUrl: string | null;
+  } | null;
 }
 
 export interface DailyListeningActivity {
@@ -83,12 +89,20 @@ export async function getTopTracks(userId: string, limit: number = 10): Promise<
       artist_name: string;
       play_count: number;
       total_minutes_listened: number;
+      album_image_url: string | null;
+      primary_artist_id: string | null;
+      primary_artist_name: string | null;
+      primary_artist_image_url: string | null;
     }>
   >`
     SELECT
       t."id" AS track_id,
       t."name" AS track_name,
       t."artistName" AS artist_name,
+      t."albumImageUrl" AS album_image_url,
+      pa."id" AS primary_artist_id,
+      pa."name" AS primary_artist_name,
+      pa."imageUrl" AS primary_artist_image_url,
       COUNT(le."id")::INTEGER AS play_count,
         COALESCE(
           CAST(
@@ -98,8 +112,17 @@ export async function getTopTracks(userId: string, limit: number = 10): Promise<
         ) AS total_minutes_listened
     FROM "ListeningEvent" le
     JOIN "Track" t ON le."trackId" = t."id"
+    LEFT JOIN "TrackArtist" ta ON ta."trackId" = t."id" AND ta."position" = 0
+    LEFT JOIN "Artist" pa ON pa."id" = ta."artistId"
     WHERE le."userId" = ${userId}
-    GROUP BY t."id", t."name", t."artistName"
+    GROUP BY
+      t."id",
+      t."name",
+      t."artistName",
+      t."albumImageUrl",
+      pa."id",
+      pa."name",
+      pa."imageUrl"
     ORDER BY play_count DESC
     LIMIT ${limit}
   `;
@@ -110,6 +133,14 @@ export async function getTopTracks(userId: string, limit: number = 10): Promise<
     artistName: track.artist_name,
     playCount: track.play_count,
     totalMinutesListened: track.total_minutes_listened,
+    albumImageUrl: track.album_image_url,
+    primaryArtist: track.primary_artist_id
+      ? {
+          id: track.primary_artist_id,
+          name: track.primary_artist_name ?? track.artist_name,
+          imageUrl: track.primary_artist_image_url,
+        }
+      : null,
   }));
 }
 

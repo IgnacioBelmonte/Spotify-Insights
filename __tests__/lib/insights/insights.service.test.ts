@@ -30,6 +30,12 @@ describe("insights.service", () => {
           artistName: "Artist 1",
           playCount: 10,
           totalMinutesListened: 30,
+          albumImageUrl: "https://i.scdn.co/image/track-1",
+          primaryArtist: {
+            id: "artist-1",
+            name: "Artist 1",
+            imageUrl: "https://i.scdn.co/image/artist-1",
+          },
         },
       ];
 
@@ -50,6 +56,9 @@ describe("insights.service", () => {
       (repository.getDailyListeningActivity as jest.Mock).mockResolvedValue(
         mockDailyActivity
       );
+      (repository.getUserLastSyncedAt as jest.Mock).mockResolvedValue(
+        new Date("2026-02-08T12:00:00.000Z")
+      );
 
       const insights = await getInsightsOverview(mockUserId);
 
@@ -57,6 +66,7 @@ describe("insights.service", () => {
         stats: mockStats,
         topTracks: mockTopTracks,
         dailyActivity: mockDailyActivity,
+        lastSyncedAt: "2026-02-08T12:00:00.000Z",
       });
     });
 
@@ -69,6 +79,7 @@ describe("insights.service", () => {
       });
       (repository.getTopTracks as jest.Mock).mockResolvedValue([]);
       (repository.getDailyListeningActivity as jest.Mock).mockResolvedValue([]);
+      (repository.getUserLastSyncedAt as jest.Mock).mockResolvedValue(null);
 
       const startTime = Date.now();
       await getInsightsOverview(mockUserId);
@@ -87,12 +98,14 @@ describe("insights.service", () => {
       });
       (repository.getTopTracks as jest.Mock).mockResolvedValue([]);
       (repository.getDailyListeningActivity as jest.Mock).mockResolvedValue([]);
+      (repository.getUserLastSyncedAt as jest.Mock).mockResolvedValue(null);
 
       const insights = await getInsightsOverview(mockUserId);
 
       expect(insights).toHaveProperty("stats");
       expect(insights).toHaveProperty("topTracks");
       expect(insights).toHaveProperty("dailyActivity");
+      expect(insights).toHaveProperty("lastSyncedAt");
       expect(Array.isArray(insights.topTracks)).toBe(true);
       expect(Array.isArray(insights.dailyActivity)).toBe(true);
     });

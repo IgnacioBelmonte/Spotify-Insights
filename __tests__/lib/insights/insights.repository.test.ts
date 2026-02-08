@@ -84,6 +84,10 @@ describe("insights.repository", () => {
           artist_name: "Artist 1",
           play_count: 10,
           total_minutes_listened: 30,
+          album_image_url: "https://i.scdn.co/image/track-1",
+          primary_artist_id: "artist-1",
+          primary_artist_name: "Artist 1",
+          primary_artist_image_url: "https://i.scdn.co/image/artist-1",
         },
         {
           track_id: "2",
@@ -91,6 +95,10 @@ describe("insights.repository", () => {
           artist_name: "Artist 2",
           play_count: 8,
           total_minutes_listened: 24,
+          album_image_url: null,
+          primary_artist_id: null,
+          primary_artist_name: null,
+          primary_artist_image_url: null,
         },
       ];
 
@@ -106,7 +114,14 @@ describe("insights.repository", () => {
         artistName: "Artist 1",
         playCount: 10,
         totalMinutesListened: 30,
+        albumImageUrl: "https://i.scdn.co/image/track-1",
+        primaryArtist: {
+          id: "artist-1",
+          name: "Artist 1",
+          imageUrl: "https://i.scdn.co/image/artist-1",
+        },
       });
+      expect(tracks[1].primaryArtist).toBeNull();
     });
 
     it("should respect limit parameter", async () => {
