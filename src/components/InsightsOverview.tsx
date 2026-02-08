@@ -267,7 +267,7 @@ export function InsightsOverview() {
               data={dailyActivity.map((day) => ({
                 date: day.date,
                 durationMs: day.durationMs,
-                tracks: day.tracks ?? [],
+                plays: day.plays ?? [],
               }))}
               variant="embedded"
             />

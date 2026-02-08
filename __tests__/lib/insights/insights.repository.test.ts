@@ -134,15 +134,15 @@ describe("insights.repository", () => {
         {
           date: "2026-02-04",
           total_duration_ms: 1800000,
-          tracks: [
-            { trackId: "1", name: "Song 1", artistName: "Artist 1", playCount: 3 },
-            { trackId: "2", name: "Song 2", artistName: "Artist 2", playCount: 2 },
+          plays: [
+            { trackId: "1", name: "Song 1", artistName: "Artist 1", playedAt: "2026-02-04T08:15:00.000Z" },
+            { trackId: "2", name: "Song 2", artistName: "Artist 2", playedAt: "2026-02-04T09:45:00.000Z" },
           ],
         },
         {
           date: "2026-02-03",
           total_duration_ms: 1080000,
-          tracks: [{ trackId: "3", name: "Song 3", artistName: "Artist 3", playCount: 3 }],
+          plays: [{ trackId: "3", name: "Song 3", artistName: "Artist 3", playedAt: "2026-02-03T12:10:00.000Z" }],
         },
       ];
 
@@ -155,9 +155,9 @@ describe("insights.repository", () => {
       expect(activity[0]).toEqual({
         date: "2026-02-04",
         durationMs: 1800000,
-        tracks: [
-          { trackId: "1", name: "Song 1", artistName: "Artist 1", playCount: 3 },
-          { trackId: "2", name: "Song 2", artistName: "Artist 2", playCount: 2 },
+        plays: [
+          { trackId: "1", name: "Song 1", artistName: "Artist 1", playedAt: "2026-02-04T08:15:00.000Z" },
+          { trackId: "2", name: "Song 2", artistName: "Artist 2", playedAt: "2026-02-04T09:45:00.000Z" },
         ],
       });
     });

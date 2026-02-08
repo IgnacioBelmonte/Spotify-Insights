@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react'
 import * as echarts from 'echarts'
 
 type Props = {
-  data: { date: string; durationMs: number; tracks: { trackId: string; name: string; artistName: string; playCount: number }[] }[]
+  data: { date: string; durationMs: number; plays: { trackId: string; name: string; artistName: string; playedAt: string }[] }[]
   variant?: "standalone" | "embedded"
 }
 
@@ -41,6 +41,15 @@ function formatDurationMs(durationMs: number): string {
     return `${hours}h`
   }
   return `${hours}h ${mins}m`
+}
+
+function formatTime24(playedAt: string): string {
+  const date = new Date(playedAt)
+  return date.toLocaleTimeString('es-ES', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
 }
 
 export default function DailyListeningChart({ data, variant = "standalone" }: Props) {
@@ -80,21 +89,24 @@ export default function DailyListeningChart({ data, variant = "standalone" }: Pr
             const value = params[0].value
             const name = params[0].name
             const dataIndex = params[0].dataIndex as number
-            const dayTracks = data[dataIndex]?.tracks ?? []
-            const tracksHtml = dayTracks.length
+            const dayPlays = data[dataIndex]?.plays ?? []
+            const sortedPlays = [...dayPlays].sort(
+              (a, b) => new Date(a.playedAt).getTime() - new Date(b.playedAt).getTime()
+            )
+            const playsHtml = sortedPlays.length
               ? `<div style="margin-top: 8px; color: #d8f4ec; max-width: 240px;">
-                   ${dayTracks
-                     .map(
-                       (track) =>
-                         `<div style="white-space: normal; word-break: break-word; line-height: 1.25;">• ${track.name} <span style="color:#9cc9c4">— ${track.artistName} (${track.playCount})</span></div>`
-                     )
+                   ${sortedPlays
+                     .map((play) => {
+                       const time = formatTime24(play.playedAt)
+                       return `<div style="white-space: normal; word-break: break-word; line-height: 1.25;">• ${time} — ${play.name} <span style="color:#9cc9c4">(${play.artistName})</span></div>`
+                     })
                      .join("")}
                  </div>`
-              : `<div style="margin-top: 8px; color: #8db0ad;">Sin canciones</div>`
+              : `<div style="margin-top: 8px; color: #8db0ad;">Sin reproducciones</div>`
             return `<div style="padding: 10px;">
               <div style="font-weight: bold; margin-bottom: 6px; color: #9ef3d4;">${name}</div>
               <div style="color: #d8f4ec;">⏱️ ${formatDurationMs(value)}</div>
-              ${tracksHtml}
+              ${playsHtml}
             </div>`
           }
           return ''

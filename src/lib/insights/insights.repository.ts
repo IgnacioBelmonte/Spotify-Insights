@@ -18,11 +18,11 @@ export interface TopTrack {
 export interface DailyListeningActivity {
   date: string; // ISO date string (YYYY-MM-DD)
   durationMs: number;
-  tracks: Array<{
+  plays: Array<{
     trackId: string;
     name: string;
     artistName: string;
-    playCount: number;
+    playedAt: string;
   }>;
 }
 
@@ -116,11 +116,11 @@ export async function getDailyListeningActivity(
     Array<{
       date: string;
       total_duration_ms: number;
-      tracks: Array<{
+      plays: Array<{
         trackId: string;
         name: string;
         artistName: string;
-        playCount: number;
+        playedAt: string;
       }> | null;
     }>
   >`
@@ -129,8 +129,11 @@ export async function getDailyListeningActivity(
         DATE(le."playedAt" AT TIME ZONE ${tz}) AS date_local,
         le."durationMs" AS duration_ms,
         le."trackId" AS track_id,
-        le."playedAt" AS played_at
+        le."playedAt" AS played_at,
+        t."name" AS track_name,
+        t."artistName" AS artist_name
       FROM "ListeningEvent" le
+      JOIN "Track" t ON le."trackId" = t."id"
       WHERE le."userId" = ${userId}
       ORDER BY le."trackId", le."playedAt"
     ),
@@ -140,17 +143,6 @@ export async function getDailyListeningActivity(
         COALESCE(CAST(SUM(CAST(e.duration_ms AS BIGINT)) AS BIGINT), 0) AS total_duration_ms
       FROM events e
       GROUP BY e.date_local
-    ),
-    track_counts AS (
-      SELECT
-        e.date_local,
-        e.track_id,
-        t."name" AS track_name,
-        t."artistName" AS artist_name,
-        COUNT(DISTINCT e.played_at)::INTEGER AS play_count
-      FROM events e
-      JOIN "Track" t ON e.track_id = t."id"
-      GROUP BY e.date_local, e.track_id, t."name", t."artistName"
     )
     SELECT
       CAST(dt.date_local AS Date) AS date,
@@ -158,17 +150,17 @@ export async function getDailyListeningActivity(
       COALESCE(
         JSON_AGG(
           JSON_BUILD_OBJECT(
-            'trackId', tc.track_id,
-            'name', tc.track_name,
-            'artistName', tc.artist_name,
-            'playCount', tc.play_count
+            'trackId', e.track_id,
+            'name', e.track_name,
+            'artistName', e.artist_name,
+            'playedAt', e.played_at
           )
-          ORDER BY tc.play_count DESC, tc.track_name ASC
-        ) FILTER (WHERE tc.track_id IS NOT NULL),
+          ORDER BY e.played_at ASC
+        ) FILTER (WHERE e.track_id IS NOT NULL),
         '[]'::json
-      ) AS tracks
+      ) AS plays
     FROM daily_totals dt
-    LEFT JOIN track_counts tc ON tc.date_local = dt.date_local
+    LEFT JOIN events e ON e.date_local = dt.date_local
     GROUP BY dt.date_local, dt.total_duration_ms
     ORDER BY date DESC
   `;
@@ -176,6 +168,6 @@ export async function getDailyListeningActivity(
   return dailyActivity.map((activity) => ({
     date: activity.date,
     durationMs: Number(activity.total_duration_ms),
-    tracks: Array.isArray(activity.tracks) ? activity.tracks : [],
+    plays: Array.isArray(activity.plays) ? activity.plays : [],
   }));
 }

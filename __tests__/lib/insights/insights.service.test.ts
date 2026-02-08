@@ -36,8 +36,10 @@ describe("insights.service", () => {
       const mockDailyActivity = [
         {
           date: "2026-02-04",
-          playsCount: 5,
-          minutesListened: 30,
+          durationMs: 1800000,
+          plays: [
+            { trackId: "1", name: "Song 1", artistName: "Artist 1", playedAt: "2026-02-04T08:15:00.000Z" },
+          ],
         },
       ];
 
