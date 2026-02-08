@@ -3,10 +3,11 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/src/lib/db/prisma";
 import { getValidAccessToken } from "@/src/lib/spotify/getValidToken";
+import { t } from "@/src/lib/i18n";
 
 export async function GET() {
   const userId = (await cookies()).get("sid")?.value;
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!userId) return NextResponse.json({ error: t("errors.unauthorized") }, { status: 401 });
 
   const accessToken = await getValidAccessToken(userId);
 
@@ -19,7 +20,8 @@ export async function GET() {
 
   if (!r.ok) {
     const txt = await r.text();
-    return NextResponse.json({ error: txt }, { status: 500 });
+    const errorText = txt?.trim().length ? txt : t("errors.syncFailed");
+    return NextResponse.json({ error: errorText }, { status: 500 });
   }
 
   const data = await r.json();

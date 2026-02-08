@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { SyncWidget } from "@/src/components/SyncWidget";
+import { t } from "@/src/lib/i18n";
 
 export default function Home() {
   const [sessionLoading, setSessionLoading] = useState(true);
@@ -69,13 +70,13 @@ export default function Home() {
         <div className="bg-[#0f1b24]/75 backdrop-blur-md border border-[#1b3a40] rounded-3xl p-8 sm:p-10 shadow-2xl shadow-emerald-500/10">
           {authError && (
             <div className="mb-6 p-4 bg-red-950/40 border border-red-800 rounded-lg text-red-200 text-sm">
-              <p className="font-semibold">Authentication Error</p>
+              <p className="font-semibold">{t("home.authErrorTitle")}</p>
               <p className="mt-1">{authError}</p>
               <button
                 onClick={() => setAuthError(null)}
                 className="mt-2 text-xs underline hover:text-red-100"
               >
-                Dismiss
+                {t("home.authErrorDismiss")}
               </button>
             </div>
           )}
@@ -83,31 +84,38 @@ export default function Home() {
           <section className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] items-center">
             <div className="space-y-6 animate-fade-up">
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-4 py-1 text-xs uppercase tracking-[0.2em] text-emerald-200">
-                Spotify Insights
+                {t("home.badge")}
               </div>
               <h1 className="text-4xl sm:text-6xl font-semibold tracking-tight leading-[1.05]">
-                Make your listening
-                <span className="block text-emerald-300">feel visual.</span>
+                {t("home.heroTitleLine1")}
+                <span className="block text-emerald-300">{t("home.heroTitleLine2")}</span>
               </h1>
               <p className="text-slate-300 text-base sm:text-lg max-w-xl">
-                Turn your Spotify history into a living dashboard. Explore daily listening,
-                track frequency, and trends without the noise.
+                {t("home.heroDescription")}
               </p>
 
               <nav className="flex flex-wrap items-center gap-3">
                 {!mounted || sessionLoading ? (
-                  <div className="text-sm text-slate-300">Checking session...</div>
+                  <div className="text-sm text-slate-300">{t("common.checkingSession")}</div>
                 ) : userName ? (
                   <div className="flex flex-wrap items-center gap-3">
                     {userAvatar ? (
-                      <Image src={userAvatar} alt={userName ?? "avatar"} width={36} height={36} className="rounded-full object-cover border border-[#1b3a40]" />
+                      <Image
+                        src={userAvatar}
+                        alt={userName ?? t("common.avatarAlt")}
+                        width={36}
+                        height={36}
+                        className="rounded-full object-cover border border-[#1b3a40]"
+                      />
                     ) : null}
-                    <span className="text-sm text-slate-200">Logged in as <strong className="text-white">{userName}</strong></span>
+                    <span className="text-sm text-slate-200">
+                      {t("common.loggedInAs")} <strong className="text-white">{userName}</strong>
+                    </span>
                     <a
                       href="/dashboard"
                       className="inline-flex items-center gap-2 px-4 py-2 bg-[#12323a] hover:bg-[#19424b] rounded-full text-sm font-medium border border-[#1b3a40] text-[#dff7f2]"
                     >
-                      Dashboard
+                      {t("common.dashboard")}
                     </a>
                     <button
                       onClick={async () => {
@@ -126,7 +134,7 @@ export default function Home() {
                       }}
                       className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-full text-sm font-medium"
                     >
-                      Logout
+                      {t("common.logout")}
                     </button>
                   </div>
                 ) : (
@@ -134,7 +142,7 @@ export default function Home() {
                     href="/api/auth/login"
                     className="inline-flex items-center gap-2 px-6 py-3 bg-[#14f1b2] hover:bg-[#5bf2c6] text-[#04221d] rounded-full text-sm font-semibold shadow-lg shadow-emerald-500/30"
                   >
-                    Login with Spotify
+                    {t("common.loginWithSpotify")}
                   </a>
                 )}
               </nav>
@@ -145,7 +153,7 @@ export default function Home() {
               <div className="relative flex h-56 w-56 sm:h-72 sm:w-72 items-center justify-center rounded-[2.5rem] border border-[#1b3a40] bg-gradient-to-br from-[#0f2a2f] via-[#0c1f27] to-[#0a141b] shadow-2xl shadow-emerald-500/25">
                 <Image
                   src="/spotify-insights-logo.svg"
-                  alt="Spotify Insights logo"
+                  alt={t("common.logoAlt")}
                   width={160}
                   height={160}
                   priority
@@ -160,25 +168,31 @@ export default function Home() {
               <SyncWidget
                 variant="compact"
                 initialLastSyncedAt={lastSyncedAt}
-                title="Quick Sync"
-                description="Sincroniza tu historial reciente para mantener el dashboard listo."
+                title={t("home.quickSyncTitle")}
+                description={t("home.quickSyncDescription")}
               />
             </div>
 
             <aside className="bg-[#111f2a]/70 rounded-2xl p-6 border border-[#1b3a40] shadow-lg shadow-emerald-500/5">
-              <h3 className="text-md font-semibold">Shortcuts</h3>
+              <h3 className="text-md font-semibold">{t("common.shortcuts")}</h3>
               <ul className="mt-3 space-y-2 text-sm text-slate-300">
                 <li>
-                  <a href="/dashboard" className="text-[#9ef3d4] hover:underline">Open Dashboard</a>
+                  <a href="/dashboard" className="text-[#9ef3d4] hover:underline">
+                    {t("common.openDashboard")}
+                  </a>
                 </li>
                 <li>
-                  <a href="/api/auth/login" className="text-[#f8c64a] hover:underline">Start OAuth Login</a>
+                  <a href="/api/auth/login" className="text-[#f8c64a] hover:underline">
+                    {t("common.startOAuth")}
+                  </a>
                 </li>
               </ul>
             </aside>
           </section>
 
-          <footer className="mt-8 text-xs text-slate-400">&copy; {new Date().getFullYear()} Spotify Insights — Sync will use your current session cookie.</footer>
+          <footer className="mt-8 text-xs text-slate-400">
+            &copy; {new Date().getFullYear()} {t("home.footer")}
+          </footer>
         </div>
       </div>
     </main>

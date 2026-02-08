@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { exchangeCodeForToken, fetchSpotifyMe } from "@/src/lib/spotify/client";
 import { prisma } from "@/src/lib/db/prisma";
+import { t } from "@/src/lib/i18n";
 
 export async function GET(req: Request) {
   try {
@@ -16,7 +17,9 @@ export async function GET(req: Request) {
 
     if (!code || !state) {
       console.error("[oauth callback] Missing code or state");
-      return NextResponse.redirect(`${process.env.APP_URL}/?error=Missing authorization code`);
+      return NextResponse.redirect(
+        `${process.env.APP_URL}/?error=${encodeURIComponent(t("auth.missingCode"))}`
+      );
     }
 
     // En Next 16 route handler, leemos cookies desde headers:
@@ -28,12 +31,16 @@ export async function GET(req: Request) {
     // Si no hay cookie, es un ataque CSRF o sesión corrupta
     if (!cookieState) {
       console.error("[oauth callback] No oauth_state cookie found - possible CSRF or incognito mode issue");
-      return NextResponse.redirect(`${process.env.APP_URL}/?error=Session expired. Please login again.`);
+      return NextResponse.redirect(
+        `${process.env.APP_URL}/?error=${encodeURIComponent(t("auth.sessionExpired"))}`
+      );
     }
 
     if (cookieState !== state) {
       console.error("[oauth callback] State mismatch - cookie:", cookieState, "param:", state);
-      return NextResponse.redirect(`${process.env.APP_URL}/?error=Invalid session state. Please login again.`);
+      return NextResponse.redirect(
+        `${process.env.APP_URL}/?error=${encodeURIComponent(t("auth.invalidSessionState"))}`
+      );
     }
 
     let token;
@@ -41,7 +48,8 @@ export async function GET(req: Request) {
       token = await exchangeCodeForToken(code);
     } catch (exchangeErr) {
       console.error("[oauth callback] Token exchange error:", exchangeErr);
-      const errorMsg = exchangeErr instanceof Error ? exchangeErr.message : "Token exchange failed";
+      const errorMsg =
+        exchangeErr instanceof Error ? exchangeErr.message : t("auth.tokenExchangeFailed");
       return NextResponse.redirect(
         `${process.env.APP_URL}/?error=${encodeURIComponent(errorMsg)}`
       );
@@ -52,7 +60,9 @@ export async function GET(req: Request) {
       me = await fetchSpotifyMe(token.access_token);
     } catch (meErr) {
       console.error("[oauth callback] Fetch user error:", meErr);
-      return NextResponse.redirect(`${process.env.APP_URL}/?error=Failed to fetch user profile`);
+      return NextResponse.redirect(
+        `${process.env.APP_URL}/?error=${encodeURIComponent(t("auth.fetchProfileFailed"))}`
+      );
     }
 
     const user = await prisma.user.upsert({
@@ -103,7 +113,7 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error("[oauth callback] Unexpected error:", error);
     return NextResponse.redirect(
-      `${process.env.APP_URL}/?error=Authentication failed. Please try again.`
+      `${process.env.APP_URL}/?error=${encodeURIComponent(t("auth.authFailed"))}`
     );
   }
 }

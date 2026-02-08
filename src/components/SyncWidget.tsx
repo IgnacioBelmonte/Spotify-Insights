@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { getLocaleTag, t } from "@/src/lib/i18n";
 
 type SyncWidgetVariant = "hero" | "compact";
 
@@ -24,6 +25,7 @@ export function SyncWidget({
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(initialLastSyncedAt);
+  const localeTag = useMemo(() => getLocaleTag(), []);
   const timeZone = useMemo(() => {
     try {
       return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -37,10 +39,10 @@ export function SyncWidget({
   }, [initialLastSyncedAt]);
 
   const lastSyncedLabel = (() => {
-    if (!lastSyncedAt) return "Aun no sincronizado";
+    if (!lastSyncedAt) return t("sync.notSynced");
     const syncedDate = new Date(lastSyncedAt);
     try {
-      return new Intl.DateTimeFormat(undefined, {
+      return new Intl.DateTimeFormat(localeTag, {
         dateStyle: "medium",
         timeStyle: "short",
         timeZone,
@@ -51,13 +53,8 @@ export function SyncWidget({
   })();
 
   const isHero = variant === "hero";
-  const resolvedTitle =
-    title ?? (isHero ? "Sincronizacion inteligente" : "Quick Sync");
-  const resolvedDescription =
-    description ??
-    (isHero
-      ? "Actualiza tus reproducciones recientes para mantener el dashboard al dia."
-      : "Trae tus ultimas reproducciones y manten el historial al dia.");
+  const resolvedTitle = title ?? t("sync.defaultTitle");
+  const resolvedDescription = description ?? t("sync.defaultDescription");
 
   async function handleSync() {
     setSyncing(true);
@@ -71,7 +68,7 @@ export function SyncWidget({
       const json = await res.json();
 
       if (!res.ok) {
-        setError(json?.error ?? "No se pudo sincronizar.");
+        setError(json?.error ?? t("sync.errorGeneric"));
         return;
       }
 
@@ -85,13 +82,13 @@ export function SyncWidget({
         } catch (err) {
           setError(
             err instanceof Error
-              ? `Sincronizacion completada, pero no se pudo refrescar el dashboard: ${err.message}`
-              : "Sincronizacion completada, pero no se pudo refrescar el dashboard."
+              ? t("sync.errorRefreshWithDetails", { message: err.message })
+              : t("sync.errorRefresh")
           );
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo sincronizar.");
+      setError(err instanceof Error ? err.message : t("sync.errorGeneric"));
     } finally {
       setSyncing(false);
     }
@@ -107,7 +104,7 @@ export function SyncWidget({
       <div className="relative space-y-4">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-emerald-200">
-            Sync
+            {t("sync.badge")}
           </div>
           <h2 className={isHero ? "text-xl font-semibold" : "text-lg font-semibold"}>
             {resolvedTitle}
@@ -117,11 +114,11 @@ export function SyncWidget({
 
         <div className={`grid ${isHero ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-2"} gap-3`}>
           <div className="rounded-2xl border border-[#1b3a40] bg-[#0b1820]/80 p-4">
-            <p className="text-xs text-slate-400 uppercase tracking-wide">Ultima vez</p>
+            <p className="text-xs text-slate-400 uppercase tracking-wide">{t("sync.lastSynced")}</p>
             <p className="text-sm text-slate-200 mt-1">{lastSyncedLabel}</p>
           </div>
           <div className="rounded-2xl border border-[#1b3a40] bg-[#0b1820]/80 p-4">
-            <p className="text-xs text-slate-400 uppercase tracking-wide">Zona horaria</p>
+            <p className="text-xs text-slate-400 uppercase tracking-wide">{t("sync.timeZone")}</p>
             <p className="text-sm text-slate-200 mt-1">{timeZone}</p>
           </div>
         </div>
@@ -132,10 +129,10 @@ export function SyncWidget({
             disabled={syncing}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#14f1b2] hover:bg-[#5bf2c6] text-[#04221d] font-semibold shadow-lg shadow-emerald-500/30 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {syncing ? "Actualizando..." : "Sincronizar ahora"}
+            {syncing ? t("sync.buttonLoading") : t("sync.buttonIdle")}
           </button>
           <span className="text-xs text-slate-400">
-            Trae tus ultimas 50 reproducciones.
+            {t("sync.helperText")}
           </span>
         </div>
 

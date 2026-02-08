@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getInsightsOverview } from "@/src/lib/insights/insights.service";
+import { t } from "@/src/lib/i18n";
 
 /**
  * Extracts user ID from session cookie
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest) {
 
     if (!userId) {
       return NextResponse.json(
-        { error: "Unauthorized - no session found" },
+        { error: t("errors.unauthorized") },
         { status: 401 }
       );
     }
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(
       {
-        error: "Failed to fetch insights",
+        error: t("errors.fetchInsights"),
         ...(process.env.NODE_ENV === "development" && {
           details: error instanceof Error ? error.message : String(error),
         }),

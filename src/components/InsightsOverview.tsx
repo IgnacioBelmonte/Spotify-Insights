@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { InsightsOverviewDTO } from "@/src/lib/insights/insights.service";
 import DailyListeningChart from "./charts/DailyListeningChart";
 import { SyncWidget } from "./SyncWidget";
+import { t } from "@/src/lib/i18n";
 
 export function InsightsOverview() {
   const [insights, setInsights] = useState<InsightsOverviewDTO | null>(null);
@@ -26,7 +27,7 @@ export function InsightsOverview() {
         credentials: "same-origin",
       });
       if (!res.ok) {
-        throw new Error(`Failed to fetch insights: ${res.status}`);
+        throw new Error(t("insights.fetchError", { status: res.status }));
       }
       return res.json();
     }
@@ -36,7 +37,9 @@ export function InsightsOverview() {
         if (active) setInsights(data);
       })
       .catch((err) => {
-        if (active) setError(err instanceof Error ? err.message : "Unknown error");
+        if (active) {
+          setError(err instanceof Error ? err.message : t("errors.fetchInsights"));
+        }
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -52,7 +55,7 @@ export function InsightsOverview() {
       credentials: "same-origin",
     });
     if (!res.ok) {
-      throw new Error(`Failed to refresh insights: ${res.status}`);
+      throw new Error(t("insights.fetchError", { status: res.status }));
     }
     const data = await res.json();
     setInsights(data);
@@ -66,7 +69,7 @@ export function InsightsOverview() {
         <div className="absolute -bottom-48 left-[-10%] h-[420px] w-[420px] rounded-full bg-cyan-500/10 blur-3xl animate-pulse-soft" />
         <div className="relative mx-auto max-w-6xl px-6 py-16">
           <div className="rounded-2xl border border-[#1b3a40] bg-[#0f1b24]/80 p-8 text-center shadow-lg shadow-emerald-500/10 animate-fade-up">
-            <p className="text-slate-300">Loading insights...</p>
+            <p className="text-slate-300">{t("insights.loading")}</p>
           </div>
         </div>
       </main>
@@ -81,7 +84,7 @@ export function InsightsOverview() {
         <div className="absolute -bottom-48 left-[-10%] h-[420px] w-[420px] rounded-full bg-cyan-500/10 blur-3xl animate-pulse-soft" />
         <div className="relative mx-auto max-w-6xl px-6 py-16">
           <div className="bg-red-950/40 border border-red-800 rounded-2xl p-6 text-red-200 shadow-lg animate-fade-up">
-            Error: {error}
+            {t("insights.error", { message: error })}
           </div>
         </div>
       </main>
@@ -96,7 +99,7 @@ export function InsightsOverview() {
         <div className="absolute -bottom-48 left-[-10%] h-[420px] w-[420px] rounded-full bg-cyan-500/10 blur-3xl animate-pulse-soft" />
         <div className="relative mx-auto max-w-6xl px-6 py-16">
           <div className="rounded-2xl border border-[#1b3a40] bg-[#0f1b24]/80 p-8 text-center text-slate-300 shadow-lg animate-fade-up">
-            No insights data available
+            {t("insights.noData")}
           </div>
         </div>
       </main>
@@ -107,24 +110,24 @@ export function InsightsOverview() {
   const maxPlays = topTracks.reduce((max, track) => Math.max(max, track.playCount), 1);
   const statCards = [
     {
-      label: "Total Minutes",
+      label: t("dashboard.stats.totalMinutes.label"),
       value: stats.totalMinutesListened.toLocaleString(),
-      caption: "min listened",
+      caption: t("dashboard.stats.totalMinutes.caption"),
     },
     {
-      label: "Total Plays",
+      label: t("dashboard.stats.totalPlays.label"),
       value: stats.totalPlays.toLocaleString(),
-      caption: "plays tracked",
+      caption: t("dashboard.stats.totalPlays.caption"),
     },
     {
-      label: "Unique Tracks",
+      label: t("dashboard.stats.uniqueTracks.label"),
       value: stats.distinctTracksCount.toLocaleString(),
-      caption: "songs discovered",
+      caption: t("dashboard.stats.uniqueTracks.caption"),
     },
     {
-      label: "Unique Artists",
+      label: t("dashboard.stats.uniqueArtists.label"),
       value: stats.distinctArtistsCount.toLocaleString(),
-      caption: "artists explored",
+      caption: t("dashboard.stats.uniqueArtists.caption"),
     },
   ];
 
@@ -138,14 +141,14 @@ export function InsightsOverview() {
         <section className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] items-center">
           <div className="space-y-5 animate-fade-up">
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-4 py-1 text-xs uppercase tracking-[0.2em] text-emerald-200">
-              Dashboard
+              {t("dashboard.badge")}
             </div>
             <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight leading-[1.05]">
-              Your listening, amplified
-              <span className="block text-emerald-300">every single day.</span>
+              {t("dashboard.heroTitleLine1")}
+              <span className="block text-emerald-300">{t("dashboard.heroTitleLine2")}</span>
             </h1>
             <p className="text-slate-300 text-base sm:text-lg max-w-xl">
-              A living snapshot of your Spotify habits. Track momentum, discover patterns, and stay in control.
+              {t("dashboard.heroDescription")}
             </p>
           </div>
 
@@ -153,8 +156,8 @@ export function InsightsOverview() {
             variant="hero"
             initialLastSyncedAt={lastSyncedAt}
             onSynced={refreshInsights}
-            title="Sincronizacion inteligente"
-            description="Actualiza tus reproducciones recientes para mantener el dashboard al dia."
+            title={t("dashboard.syncTitle")}
+            description={t("dashboard.syncDescription")}
             className="animate-float"
           />
         </section>
@@ -179,8 +182,10 @@ export function InsightsOverview() {
         <section className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-6">
           <div className="bg-[#0f1b24]/85 border border-[#1b3a40] rounded-2xl p-6 shadow-lg shadow-emerald-500/10">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-semibold">Top Tracks</h2>
-              <span className="text-xs text-slate-400 uppercase tracking-wide">Your repeaters</span>
+              <h2 className="text-2xl font-semibold">{t("dashboard.topTracks.title")}</h2>
+              <span className="text-xs text-slate-400 uppercase tracking-wide">
+                {t("dashboard.topTracks.subtitle")}
+              </span>
             </div>
             <div className="space-y-3">
               {topTracks.length > 0 ? (
@@ -196,8 +201,12 @@ export function InsightsOverview() {
                         <p className="text-sm text-slate-400">{track.artistName}</p>
                       </div>
                       <div className="text-right text-sm text-slate-300">
-                        <p>{track.playCount} plays</p>
-                        <p className="text-xs text-slate-500">{track.totalMinutesListened} min</p>
+                        <p>
+                          {track.playCount} {t("dashboard.topTracks.playsLabel")}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {track.totalMinutesListened} {t("dashboard.topTracks.minutesLabel")}
+                        </p>
                       </div>
                     </div>
                     <div className="mt-3 h-1.5 rounded-full bg-[#0b1820] overflow-hidden">
@@ -209,15 +218,19 @@ export function InsightsOverview() {
                   </div>
                 ))
               ) : (
-                <p className="text-slate-400 text-center py-4">No tracks available</p>
+                <p className="text-slate-400 text-center py-4">
+                  {t("dashboard.topTracks.empty")}
+                </p>
               )}
             </div>
           </div>
 
           <div className="bg-[#0f1b24]/85 border border-[#1b3a40] rounded-2xl p-6 shadow-lg shadow-emerald-500/10">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-semibold">Daily Activity</h2>
-              <span className="text-xs text-slate-400 uppercase tracking-wide">Time spent</span>
+              <h2 className="text-2xl font-semibold">{t("dashboard.dailyActivity.title")}</h2>
+              <span className="text-xs text-slate-400 uppercase tracking-wide">
+                {t("dashboard.dailyActivity.subtitle")}
+              </span>
             </div>
             <DailyListeningChart
               data={dailyActivity.map((day) => ({

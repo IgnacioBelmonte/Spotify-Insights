@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import { t } from "@/src/lib/i18n";
 
 interface UserMenuProps {
   displayName: string | null;
@@ -56,7 +57,7 @@ export function UserMenu({ displayName, imageUrl, onLogout }: UserMenuProps) {
           {imageUrl ? (
             <Image
               src={imageUrl}
-              alt={displayName ?? "avatar"}
+              alt={displayName ?? t("common.avatarAlt")}
               width={36}
               height={36}
               className="rounded-full object-cover border border-[#1b3a40] ring-2 ring-[#0d2a2e] group-hover:ring-[#1dd6a7]/40 transition-all"
@@ -70,9 +71,9 @@ export function UserMenu({ displayName, imageUrl, onLogout }: UserMenuProps) {
         </div>
         <div className="hidden sm:flex flex-col items-start leading-tight">
           <span className="text-sm font-semibold text-white">
-            {displayName || "Usuario"}
+            {displayName || t("userMenu.userFallback")}
           </span>
-          <span className="text-[11px] text-[#9cc9c4]">Cuenta activa</span>
+          <span className="text-[11px] text-[#9cc9c4]">{t("userMenu.activeAccount")}</span>
         </div>
         <svg
           viewBox="0 0 20 20"
@@ -97,7 +98,7 @@ export function UserMenu({ displayName, imageUrl, onLogout }: UserMenuProps) {
               {imageUrl ? (
                 <Image
                   src={imageUrl}
-                  alt={displayName ?? "avatar"}
+                  alt={displayName ?? t("common.avatarAlt")}
                   width={40}
                   height={40}
                   className="rounded-full object-cover border border-[#1b3a40]"
@@ -109,9 +110,9 @@ export function UserMenu({ displayName, imageUrl, onLogout }: UserMenuProps) {
               )}
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-white truncate">
-                  {displayName || "Usuario"}
+                  {displayName || t("userMenu.userFallback")}
                 </p>
-                <p className="text-xs text-[#9cc9c4]">Cuenta activa</p>
+                <p className="text-xs text-[#9cc9c4]">{t("userMenu.activeAccount")}</p>
               </div>
             </div>
           </div>
@@ -120,7 +121,7 @@ export function UserMenu({ displayName, imageUrl, onLogout }: UserMenuProps) {
             onClick={handleLogout}
             className="w-full text-left px-4 py-3 text-sm text-red-300 hover:bg-red-900/30 hover:text-red-200 transition-colors"
           >
-            Logout
+            {t("common.logout")}
           </button>
         </div>
       )}

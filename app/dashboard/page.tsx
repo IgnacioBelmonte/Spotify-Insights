@@ -5,6 +5,7 @@ import { UserMenu } from "@/src/components/UserMenu";
 import { InsightsOverview } from "@/src/components/InsightsOverview";
 import Link from "next/link";
 import Image from "next/image";
+import { t } from "@/src/lib/i18n";
 
 export default async function Dashboard() {
   const sid = (await cookies()).get("sid")?.value;
@@ -21,17 +22,17 @@ export default async function Dashboard() {
           <Link
             href="/"
             className="inline-flex items-center gap-3 rounded-2xl border border-[#1c4d4f] bg-[#0b1820] px-4 py-2 text-2xl md:text-3xl font-extrabold tracking-tight text-white shadow-lg shadow-emerald-500/10 transition hover:scale-[1.02] hover:border-[#2d6a6a] hover:bg-[#0d1f29] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1dd6a7]/60"
-            aria-label="Volver al lobby"
+            aria-label={t("dashboard.backToLobbyAria")}
           >
             <Image
               src="/spotify-insights-logo.svg"
-              alt="Spotify Insights logo"
+              alt={t("common.logoAlt")}
               width={36}
               height={36}
               className="rounded-xl"
             />
-            <span className="text-[#9ef3d4]">Spotify</span>
-            <span>Insights</span>
+            <span className="text-[#9ef3d4]">{t("common.brandSpotify")}</span>
+            <span>{t("common.brandInsights")}</span>
           </Link>
           <UserMenu
             displayName={user.displayName}

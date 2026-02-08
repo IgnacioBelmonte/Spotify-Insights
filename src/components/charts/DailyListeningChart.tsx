@@ -4,6 +4,9 @@
 import ReactECharts from 'echarts-for-react'
 import { useEffect, useMemo, useState } from 'react'
 import * as echarts from 'echarts'
+import { getLocaleTag, t } from '@/src/lib/i18n'
+
+const localeTag = getLocaleTag()
 
 type Props = {
   data: { date: string; durationMs: number; plays: { trackId: string; name: string; artistName: string; playedAt: string }[] }[]
@@ -17,7 +20,7 @@ function formatDate(dateString: string): string {
     day: 'numeric',
     month: 'short',
   }
-  return date.toLocaleDateString('es-ES', options).toUpperCase()
+  return date.toLocaleDateString(localeTag, options).toUpperCase()
 }
 
 function formatDateMobile(dateString: string): string {
@@ -27,7 +30,7 @@ function formatDateMobile(dateString: string): string {
     day: 'numeric',
     month: 'short',
   }
-  return date.toLocaleDateString('es-ES', options).toUpperCase()
+  return date.toLocaleDateString(localeTag, options).toUpperCase()
 }
 
 function formatDurationMs(durationMs: number): string {
@@ -46,10 +49,9 @@ function formatDurationMs(durationMs: number): string {
 
 function formatTime24(playedAt: string): string {
   const date = new Date(playedAt)
-  return date.toLocaleTimeString('es-ES', {
+  return date.toLocaleTimeString(localeTag, {
     hour: '2-digit',
     minute: '2-digit',
-    hour12: false,
   })
 }
 
@@ -103,7 +105,7 @@ export default function DailyListeningChart({ data, variant = "standalone" }: Pr
                      })
                      .join("")}
                  </div>`
-              : `<div style="margin-top: 8px; color: #8db0ad;">Sin reproducciones</div>`
+              : `<div style="margin-top: 8px; color: #8db0ad;">${t("chart.noPlays")}</div>`
             return `<div style="padding: 10px;">
               <div style="font-weight: bold; margin-bottom: 6px; color: #9ef3d4;">${name}</div>
               <div style="color: #d8f4ec;">⏱️ ${formatDurationMs(value)}</div>
@@ -225,7 +227,7 @@ export default function DailyListeningChart({ data, variant = "standalone" }: Pr
       }
     >
       {!isEmbedded ? (
-        <h2 className="mb-4 text-lg font-semibold text-[#dff7f2]">Actividad de Escucha Diaria</h2>
+        <h2 className="mb-4 text-lg font-semibold text-[#dff7f2]">{t("chart.dailyListeningTitle")}</h2>
       ) : null}
       <div
         className={
