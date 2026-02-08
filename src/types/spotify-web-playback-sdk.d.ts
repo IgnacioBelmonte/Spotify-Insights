@@ -54,8 +54,12 @@ interface SpotifyPlayer {
   connect: () => Promise<boolean>;
   disconnect: () => void;
   getCurrentState: () => Promise<SpotifyPlayerState | null>;
+  getVolume: () => Promise<number>;
   pause: () => Promise<void>;
   resume: () => Promise<void>;
+  previousTrack: () => Promise<void>;
+  nextTrack: () => Promise<void>;
+  setVolume: (volume: number) => Promise<void>;
   togglePlay: () => Promise<void>;
   seek: (positionMs: number) => Promise<void>;
   addListener: (event: "ready" | "not_ready", callback: (event: SpotifyReadyEvent) => void) => boolean;

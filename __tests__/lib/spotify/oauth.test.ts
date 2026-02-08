@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest } from "@jest/globals";
+import { describe, it, expect } from "@jest/globals";
 import { makeSpotifyAuthUrl, makeState, SPOTIFY_SCOPES } from "@/src/lib/spotify/oauth";
 
 describe("oauth.ts", () => {
@@ -44,6 +44,7 @@ describe("oauth.ts", () => {
       expect(url).toContain("user-read-recently-played");
       expect(url).toContain("streaming");
       expect(url).toContain("user-read-playback-state");
+      expect(url).toContain("user-read-currently-playing");
       expect(url).toContain("user-modify-playback-state");
     });
 

@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { t } from "@/src/lib/i18n";
+import { SpotifyPlaybackControls } from "@/src/components/player/SpotifyPlaybackControls";
+import { SpotifyFloatingPlayer } from "@/src/components/player/SpotifyFloatingPlayer";
 
 interface PlaybackTrack {
   id: string;
@@ -16,6 +18,7 @@ interface SpotifyPlaybackModalProps {
   isPremium: boolean;
   track: PlaybackTrack | null;
   onClose: () => void;
+  onOpen: () => void;
 }
 
 interface CurrentPlaybackResponse {
@@ -31,16 +34,9 @@ interface CurrentPlaybackResponse {
   error?: string;
 }
 
-let sdkLoadPromise: Promise<void> | null = null;
+const CURRENT_PLAYBACK_POLL_MS = 4000;
 
-function formatMilliseconds(value: number): string {
-  const totalSeconds = Math.max(0, Math.floor(value / 1000));
-  const minutes = Math.floor(totalSeconds / 60)
-    .toString()
-    .padStart(2, "0");
-  const seconds = (totalSeconds % 60).toString().padStart(2, "0");
-  return `${minutes}:${seconds}`;
-}
+let sdkLoadPromise: Promise<void> | null = null;
 
 function readErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message.trim().length > 0) {
@@ -116,9 +112,11 @@ export function SpotifyPlaybackModal({
   isPremium,
   track,
   onClose,
+  onOpen,
 }: SpotifyPlaybackModalProps) {
   const playerRef = useRef<SpotifyPlayer | null>(null);
   const requestedTrackRef = useRef<string | null>(null);
+  const remoteSyncErrorRef = useRef(false);
 
   const [displayTrack, setDisplayTrack] = useState<PlaybackTrack | null>(track);
   const [deviceId, setDeviceId] = useState<string | null>(null);
@@ -128,6 +126,8 @@ export function SpotifyPlaybackModal({
   const [isPlaying, setIsPlaying] = useState(false);
   const [positionMs, setPositionMs] = useState(0);
   const [durationMs, setDurationMs] = useState(1);
+  const [volumePercent, setVolumePercent] = useState(80);
+  const [permissionsMissing, setPermissionsMissing] = useState(false);
 
   useEffect(() => {
     if (!track) {
@@ -223,6 +223,11 @@ export function SpotifyPlaybackModal({
           throw new Error(t("player.connectError"));
         }
 
+        const currentVolume = await player.getVolume().catch(() => 0.8);
+        if (!cancelled) {
+          setVolumePercent(Math.round(Math.max(0, Math.min(currentVolume, 1)) * 100));
+        }
+
         playerRef.current = player;
       } catch (incomingError) {
         if (cancelled) {
@@ -278,6 +283,11 @@ export function SpotifyPlaybackModal({
         });
 
         const payload = await response.json().catch(() => null);
+        if (response.status === 403) {
+          setPermissionsMissing(true);
+          return;
+        }
+
         if (!response.ok) {
           throw new Error(payload?.error ?? t("player.playbackError"));
         }
@@ -320,7 +330,7 @@ export function SpotifyPlaybackModal({
   }, [isOpen, onClose]);
 
   useEffect(() => {
-    if (!isOpen || !isPlaying || !playerRef.current) {
+    if (!isPlaying || !playerRef.current) {
       return;
     }
 
@@ -335,10 +345,10 @@ export function SpotifyPlaybackModal({
     }, 1000);
 
     return () => window.clearInterval(interval);
-  }, [isOpen, isPlaying]);
+  }, [isPlaying]);
 
   useEffect(() => {
-    if (!isOpen || !isPremium) {
+    if (!isPremium || permissionsMissing) {
       return;
     }
 
@@ -353,13 +363,23 @@ export function SpotifyPlaybackModal({
         });
         const payload = (await response.json().catch(() => null)) as CurrentPlaybackResponse | null;
 
-        if (!response.ok) {
-          if (response.status >= 500 && !cancelled) {
-            setError(payload?.error ?? t("player.currentStateError"));
+        if (response.status === 403) {
+          if (!cancelled) {
+            setPermissionsMissing(true);
+            setError(null);
           }
           return;
         }
 
+        if (!response.ok) {
+          if (response.status >= 500 && !cancelled && !remoteSyncErrorRef.current) {
+            setError(payload?.error ?? t("player.currentStateError"));
+            remoteSyncErrorRef.current = true;
+          }
+          return;
+        }
+
+        remoteSyncErrorRef.current = false;
         const playback = payload?.playback;
         if (!playback || cancelled) {
           return;
@@ -375,142 +395,207 @@ export function SpotifyPlaybackModal({
         setPositionMs(Math.max(playback.positionMs, 0));
         setDurationMs(Math.max(playback.durationMs, 1));
       } catch (incomingError) {
-        if (!cancelled) {
+        if (!cancelled && !remoteSyncErrorRef.current) {
           setError(readErrorMessage(incomingError));
+          remoteSyncErrorRef.current = true;
         }
       }
     }
 
     syncCurrentPlayback();
-    const interval = window.setInterval(syncCurrentPlayback, 4000);
+    const interval = window.setInterval(syncCurrentPlayback, CURRENT_PLAYBACK_POLL_MS);
 
     return () => {
       cancelled = true;
       window.clearInterval(interval);
     };
-  }, [isOpen, isPremium]);
-
-  if (!isOpen || !track) {
-    return null;
-  }
+  }, [isPremium, permissionsMissing]);
 
   const visualTrack = displayTrack ?? track;
   const canControlPlayer = Boolean(playerRef.current && deviceId && isPremium);
-  const progress = Math.min(positionMs, durationMs);
+  const controlsDisabled = !canControlPlayer || sdkConnecting || playbackStarting;
+  const floatingVisible = Boolean(visualTrack) && (isPlaying || positionMs > 0) && !isOpen;
+
+  async function handleTogglePlay() {
+    if (!playerRef.current) {
+      return;
+    }
+
+    try {
+      await playerRef.current.togglePlay();
+    } catch (incomingError) {
+      setError(readErrorMessage(incomingError));
+    }
+  }
+
+  async function handlePreviousTrack() {
+    if (!playerRef.current) {
+      return;
+    }
+
+    try {
+      await playerRef.current.previousTrack();
+    } catch (incomingError) {
+      setError(readErrorMessage(incomingError));
+    }
+  }
+
+  async function handleNextTrack() {
+    if (!playerRef.current) {
+      return;
+    }
+
+    try {
+      await playerRef.current.nextTrack();
+    } catch (incomingError) {
+      setError(readErrorMessage(incomingError));
+    }
+  }
+
+  async function handleSeek(nextPositionMs: number) {
+    if (!playerRef.current) {
+      return;
+    }
+
+    try {
+      await playerRef.current.seek(nextPositionMs);
+      setPositionMs(nextPositionMs);
+    } catch (incomingError) {
+      setError(readErrorMessage(incomingError));
+    }
+  }
+
+  async function handleVolumeChange(nextVolumePercent: number) {
+    if (!playerRef.current) {
+      return;
+    }
+
+    const safeVolumePercent = Math.max(0, Math.min(nextVolumePercent, 100));
+    try {
+      await playerRef.current.setVolume(safeVolumePercent / 100);
+      setVolumePercent(safeVolumePercent);
+    } catch (incomingError) {
+      setError(readErrorMessage(incomingError));
+    }
+  }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-      <div
-        className="absolute inset-0"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      <section className="relative z-[81] w-full max-w-2xl overflow-hidden rounded-3xl border border-[#25535a] bg-[#0c1720]/95 shadow-2xl shadow-emerald-500/30">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(29,214,167,0.16),_transparent_60%)]" />
-        <div className="relative p-5 sm:p-7">
-          <button
-            type="button"
+    <>
+      {isOpen && visualTrack ? (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+          <div
+            className="absolute inset-0"
             onClick={onClose}
-            className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#295a60] bg-[#0f232d] text-slate-200 hover:border-[#31a78a] hover:text-white"
-            aria-label={t("player.close")}
-          >
-            x
-          </button>
+            aria-hidden="true"
+          />
+          <section className="relative z-[81] w-full max-w-2xl overflow-hidden rounded-3xl border border-[#25535a] bg-[#0c1720]/95 shadow-2xl shadow-emerald-500/30">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(29,214,167,0.16),_transparent_60%)]" />
+            <div className="relative p-5 sm:p-7">
+              <button
+                type="button"
+                onClick={onClose}
+                className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#295a60] bg-[#0f232d] text-slate-200 hover:border-[#31a78a] hover:text-white"
+                aria-label={t("player.close")}
+              >
+                x
+              </button>
 
-          <p className="text-xs uppercase tracking-[0.22em] text-emerald-200">
-            {t("player.modalEyebrow")}
-          </p>
-          <h3 className="mt-2 text-2xl font-semibold text-white">{t("player.modalTitle")}</h3>
+              <p className="text-xs uppercase tracking-[0.22em] text-emerald-200">
+                {t("player.modalEyebrow")}
+              </p>
+              <h3 className="mt-2 text-2xl font-semibold text-white">{t("player.modalTitle")}</h3>
 
-          <div className="mt-6 grid gap-5 sm:grid-cols-[220px_1fr] sm:items-start">
-            <div className="relative h-[220px] w-full overflow-hidden rounded-2xl border border-[#2d5960] bg-[#10222c] shadow-xl shadow-emerald-500/20">
-              {visualTrack.albumImageUrl ? (
-                <Image
-                  src={visualTrack.albumImageUrl}
-                  alt={visualTrack.name}
-                  fill
-                  sizes="220px"
-                  className="object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-4xl font-bold text-[#8ec7bd]">
-                  {visualTrack.name.charAt(0).toUpperCase()}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-slate-300">{visualTrack.artistName}</p>
-                <p className="text-2xl font-semibold text-white leading-tight">{visualTrack.name}</p>
-              </div>
-
-              {isPremium ? (
-                <div className="space-y-3 rounded-2xl border border-[#24535a] bg-[#0b1c25]/80 p-4">
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => playerRef.current?.togglePlay()}
-                      disabled={!canControlPlayer || sdkConnecting || playbackStarting}
-                      className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#14f1b2] text-lg font-bold text-[#0a261f] shadow-md shadow-emerald-400/40 hover:bg-[#5bf2c6] disabled:cursor-not-allowed disabled:bg-[#28463f] disabled:text-slate-400 disabled:shadow-none"
-                      aria-label={isPlaying ? t("player.pause") : t("player.play")}
-                    >
-                      {isPlaying ? "||" : ">"}
-                    </button>
-
-                    <div className="flex min-w-0 flex-1 items-center gap-2">
-                      <input
-                        type="range"
-                        min={0}
-                        max={durationMs}
-                        step={500}
-                        value={progress}
-                        onChange={(event) => {
-                          const nextPosition = Number(event.target.value);
-                          playerRef.current?.seek(nextPosition);
-                          setPositionMs(nextPosition);
-                        }}
-                        disabled={!canControlPlayer || sdkConnecting || playbackStarting}
-                        className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-[#26444a] accent-[#19d8a9] disabled:cursor-not-allowed disabled:opacity-60"
-                      />
-                      <span className="w-[84px] text-right text-xs text-slate-300">
-                        {formatMilliseconds(progress)} / {formatMilliseconds(durationMs)}
-                      </span>
+              <div className="mt-6 grid gap-5 sm:grid-cols-[220px_1fr] sm:items-start">
+                <div className="relative h-[220px] w-full overflow-hidden rounded-2xl border border-[#2d5960] bg-[#10222c] shadow-xl shadow-emerald-500/20">
+                  {visualTrack.albumImageUrl ? (
+                    <Image
+                      src={visualTrack.albumImageUrl}
+                      alt={visualTrack.name}
+                      fill
+                      sizes="220px"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-4xl font-bold text-[#8ec7bd]">
+                      {visualTrack.name.charAt(0).toUpperCase()}
                     </div>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm text-slate-300">{visualTrack.artistName}</p>
+                    <p className="text-2xl font-semibold text-white leading-tight">{visualTrack.name}</p>
                   </div>
 
-                  <p className="text-xs text-slate-400">
-                    {sdkConnecting
-                      ? t("player.connecting")
-                      : playbackStarting
-                        ? t("player.starting")
-                        : t("player.ready")}
-                  </p>
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-amber-300/30 bg-amber-400/10 p-4 text-sm text-amber-100">
-                  {t("player.premiumRequired")}
-                </div>
-              )}
+                  {isPremium ? (
+                    <div className="space-y-3 rounded-2xl border border-[#24535a] bg-[#0b1c25]/80 p-4">
+                      <SpotifyPlaybackControls
+                        isPlaying={isPlaying}
+                        disabled={controlsDisabled}
+                        positionMs={positionMs}
+                        durationMs={durationMs}
+                        volumePercent={volumePercent}
+                        onTogglePlay={handleTogglePlay}
+                        onPreviousTrack={handlePreviousTrack}
+                        onNextTrack={handleNextTrack}
+                        onSeek={handleSeek}
+                        onVolumeChange={handleVolumeChange}
+                      />
 
-              {error ? (
-                <p className="rounded-2xl border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-100">
-                  {error}
-                </p>
-              ) : null}
+                      <p className="text-xs text-slate-400">
+                        {sdkConnecting
+                          ? t("player.connecting")
+                          : playbackStarting
+                            ? t("player.starting")
+                            : permissionsMissing
+                              ? t("player.permissionsMissing")
+                              : t("player.ready")}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-amber-300/30 bg-amber-400/10 p-4 text-sm text-amber-100">
+                      {t("player.premiumRequired")}
+                    </div>
+                  )}
 
-              <a
-                href={`https://open.spotify.com/track/${visualTrack.id}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-full border border-[#2c6665] bg-[#102a2f] px-4 py-2 text-sm text-[#d5f2eb] hover:border-[#47be9a] hover:text-white"
-              >
-                {t("player.openInSpotify")}
-              </a>
+                  {error ? (
+                    <p className="rounded-2xl border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-100">
+                      {error}
+                    </p>
+                  ) : null}
+
+                  <a
+                    href={`https://open.spotify.com/track/${visualTrack.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full border border-[#2c6665] bg-[#102a2f] px-4 py-2 text-sm text-[#d5f2eb] hover:border-[#47be9a] hover:text-white"
+                  >
+                    {t("player.openInSpotify")}
+                  </a>
+                </div>
+              </div>
             </div>
-          </div>
+          </section>
         </div>
-      </section>
-    </div>
+      ) : null}
+
+      <SpotifyFloatingPlayer
+        visible={floatingVisible}
+        track={visualTrack}
+        isPlaying={isPlaying}
+        disabled={controlsDisabled}
+        positionMs={positionMs}
+        durationMs={durationMs}
+        volumePercent={volumePercent}
+        onTogglePlay={handleTogglePlay}
+        onPreviousTrack={handlePreviousTrack}
+        onNextTrack={handleNextTrack}
+        onSeek={handleSeek}
+        onVolumeChange={handleVolumeChange}
+        onOpenModal={onOpen}
+      />
+    </>
   );
 }
+

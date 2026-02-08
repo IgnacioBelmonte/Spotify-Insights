@@ -16,7 +16,8 @@ export function InsightsOverview({ isPremium }: InsightsOverviewProps) {
   const [insights, setInsights] = useState<InsightsOverviewDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedTrack, setSelectedTrack] = useState<TrackCardData | null>(null);
+  const [playerSeedTrack, setPlayerSeedTrack] = useState<TrackCardData | null>(null);
+  const [isPlayerModalOpen, setIsPlayerModalOpen] = useState(false);
   const [timeZone] = useState(() => {
     try {
       return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -66,6 +67,11 @@ export function InsightsOverview({ isPremium }: InsightsOverviewProps) {
     }
     const data = await res.json();
     setInsights(data);
+  }
+
+  function openPlayerForTrack(track: TrackCardData) {
+    setPlayerSeedTrack(track);
+    setIsPlayerModalOpen(true);
   }
 
   if (loading) {
@@ -203,7 +209,7 @@ export function InsightsOverview({ isPremium }: InsightsOverviewProps) {
                     rank={idx + 1}
                     maxPlays={maxPlays}
                     isPremium={isPremium}
-                    onOpenPlayback={setSelectedTrack}
+                    onOpenPlayback={openPlayerForTrack}
                   />
                 ))
               ) : (
@@ -234,10 +240,15 @@ export function InsightsOverview({ isPremium }: InsightsOverviewProps) {
       </div>
 
       <SpotifyPlaybackModal
-        isOpen={Boolean(selectedTrack)}
+        isOpen={isPlayerModalOpen}
         isPremium={isPremium}
-        track={selectedTrack}
-        onClose={() => setSelectedTrack(null)}
+        track={playerSeedTrack}
+        onClose={() => setIsPlayerModalOpen(false)}
+        onOpen={() => {
+          if (playerSeedTrack) {
+            setIsPlayerModalOpen(true);
+          }
+        }}
       />
     </main>
   );

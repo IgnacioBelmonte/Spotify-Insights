@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { z } from "zod";
 import { prisma } from "@/src/lib/db/prisma";
 import { getValidAccessToken } from "@/src/lib/spotify/getValidToken";
-import { playTrackOnSpotifyDevice } from "@/src/lib/spotify/player.service";
+import { playTrackOnSpotifyDevice, SpotifyApiError } from "@/src/lib/spotify/player.service";
 import { t } from "@/src/lib/i18n";
 
 const playTrackPayloadSchema = z.object({
@@ -42,8 +42,17 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (error) {
+    if (error instanceof SpotifyApiError) {
+      const permissionsMissing =
+        error.status === 401 &&
+        error.body.toLowerCase().includes("permissions missing");
+
+      if (permissionsMissing || error.status === 403) {
+        return NextResponse.json({ error: t("player.permissionsMissing") }, { status: 403 });
+      }
+    }
+
     console.error("[/api/spotify/player/play] Error:", error);
     return NextResponse.json({ error: t("player.playbackError") }, { status: 500 });
   }
 }
-
