@@ -2,39 +2,15 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { SyncWidget } from "@/src/components/SyncWidget";
 
 export default function Home() {
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [userName, setUserName] = useState<string | null>(null);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-
-  async function handleSync() {
-    setLoading(true);
-    setResult(null);
-    try {
-      const res = await fetch("/api/sync/recently-played", {
-        method: "GET",
-        credentials: "same-origin",
-        headers: { "Accept": "application/json" },
-      });
-
-      const json = await res.json();
-
-      if (!res.ok) {
-        setResult(JSON.stringify(json));
-      } else {
-        setResult(JSON.stringify(json));
-      }
-    } catch (err) {
-      setResult(String(err));
-    } finally {
-      setLoading(false);
-    }
-  }
 
   useEffect(() => {
     let active = true;
@@ -42,7 +18,11 @@ export default function Home() {
       try {
         const res = await fetch("/api/auth/session", { credentials: "same-origin" });
         if (!res.ok) {
-          if (active) setUserName(null);
+          if (active) {
+            setUserName(null);
+            setUserAvatar(null);
+            setLastSyncedAt(null);
+          }
           return;
         }
         const json = await res.json();
@@ -50,9 +30,14 @@ export default function Home() {
         const user = json?.user;
         setUserName(user?.displayName ?? null);
         setUserAvatar(user?.imageUrl ?? null);
+        setLastSyncedAt(user?.lastSyncedAt ?? null);
       } catch (e) {
         console.error("/api/auth/session error:", e);
-        if (active) setUserName(null);
+        if (active) {
+          setUserName(null);
+          setUserAvatar(null);
+          setLastSyncedAt(null);
+        }
       } finally {
         if (active) setSessionLoading(false);
       }
@@ -171,35 +156,13 @@ export default function Home() {
           </section>
 
           <section className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2 bg-[#111f2a]/70 rounded-2xl p-6 border border-[#1b3a40] shadow-lg shadow-emerald-500/5">
-              <h2 className="text-lg font-semibold">Quick Sync</h2>
-              <p className="text-slate-300 text-sm mt-1">Fetch your latest recently played tracks and store them locally for analysis.</p>
-
-              <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3">
-                <button
-                  onClick={handleSync}
-                  className="px-5 py-2.5 bg-[#1dd6a7] hover:bg-[#35e6b9] text-[#04221d] rounded-full font-semibold disabled:opacity-60"
-                  disabled={loading}
-                >
-                  {loading ? "Syncing..." : "Sync Recently Played"}
-                </button>
-
-                <button
-                  onClick={() => {
-                    setResult(null);
-                  }}
-                  className="px-4 py-2 border border-[#2b4a50] rounded-full text-sm text-slate-200 hover:border-[#3a5c61]"
-                >
-                  Clear
-                </button>
-              </div>
-
-              <div className="mt-4">
-                <label className="text-sm text-slate-400">Result</label>
-                <div className="mt-2 bg-black/40 p-4 rounded-xl text-xs font-mono max-h-48 overflow-auto text-slate-200 border border-[#15252b]">
-                  {result ? <pre className="whitespace-pre-wrap">{result}</pre> : <span className="text-slate-500">No results yet.</span>}
-                </div>
-              </div>
+            <div className="lg:col-span-2">
+              <SyncWidget
+                variant="compact"
+                initialLastSyncedAt={lastSyncedAt}
+                title="Quick Sync"
+                description="Sincroniza tu historial reciente para mantener el dashboard listo."
+              />
             </div>
 
             <aside className="bg-[#111f2a]/70 rounded-2xl p-6 border border-[#1b3a40] shadow-lg shadow-emerald-500/5">
@@ -210,9 +173,6 @@ export default function Home() {
                 </li>
                 <li>
                   <a href="/api/auth/login" className="text-[#f8c64a] hover:underline">Start OAuth Login</a>
-                </li>
-                <li>
-                  <button onClick={handleSync} className="text-slate-200 hover:underline">Run Sync</button>
                 </li>
               </ul>
             </aside>

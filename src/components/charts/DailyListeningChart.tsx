@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import ReactECharts from 'echarts-for-react'
@@ -229,8 +230,8 @@ export default function DailyListeningChart({ data, variant = "standalone" }: Pr
       <div
         className={
           isEmbedded
-            ? "rounded-2xl border border-[#16313a] bg-gradient-to-br from-[#0e1f28] to-[#0b1820] p-3"
-            : "rounded-none sm:rounded-lg border-0 sm:border border-[#16313a] bg-gradient-to-br from-[#0e1f28] to-[#0b1820] p-3 sm:p-4"
+            ? "rounded-2xl border border-[#16313a] bg-linear-to-br from-[#0e1f28] to-[#0b1820] p-3"
+            : "rounded-none sm:rounded-lg border-0 sm:border border-[#16313a] bg-linear-to-br from-[#0e1f28] to-[#0b1820] p-3 sm:p-4"
         }
       >
         <ReactECharts

@@ -3,13 +3,12 @@
 import { useEffect, useState } from "react";
 import type { InsightsOverviewDTO } from "@/src/lib/insights/insights.service";
 import DailyListeningChart from "./charts/DailyListeningChart";
+import { SyncWidget } from "./SyncWidget";
 
 export function InsightsOverview() {
   const [insights, setInsights] = useState<InsightsOverviewDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [syncing, setSyncing] = useState(false);
-  const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [timeZone] = useState(() => {
     try {
       return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -21,54 +20,42 @@ export function InsightsOverview() {
   const insightsUrl = `/api/insights/overview?tz=${encodeURIComponent(timeZone)}`;
 
   useEffect(() => {
+    let active = true;
     async function fetchInsights() {
-      try {
-        const res = await fetch(insightsUrl, {
-          credentials: "same-origin",
-        });
-        if (!res.ok) {
-          throw new Error(`Failed to fetch insights: ${res.status}`);
-        }
-        const data = await res.json();
-        setInsights(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchInsights();
-  }, []);
-
-  async function handleSync() {
-    setSyncing(true);
-    setSyncMessage(null);
-    try {
-      const res = await fetch("/api/sync/recently-played", {
-        method: "GET",
+      const res = await fetch(insightsUrl, {
         credentials: "same-origin",
-        headers: { Accept: "application/json" },
       });
-      const json = await res.json();
       if (!res.ok) {
-        setSyncMessage(json?.error ?? "Sync failed.");
-        return;
+        throw new Error(`Failed to fetch insights: ${res.status}`);
       }
-      setSyncMessage("Sync completed. Refreshing insights...");
-      // Re-fetch insights after sync
-      const insightsRes = await fetch(insightsUrl, {
-        credentials: "same-origin",
-      });
-      if (insightsRes.ok) {
-        const data = await insightsRes.json();
-        setInsights(data);
-      }
-    } catch (err) {
-      setSyncMessage(err instanceof Error ? err.message : "Sync failed.");
-    } finally {
-      setSyncing(false);
+      return res.json();
     }
+
+    fetchInsights()
+      .then((data) => {
+        if (active) setInsights(data);
+      })
+      .catch((err) => {
+        if (active) setError(err instanceof Error ? err.message : "Unknown error");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [insightsUrl]);
+
+  async function refreshInsights() {
+    const res = await fetch(insightsUrl, {
+      credentials: "same-origin",
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to refresh insights: ${res.status}`);
+    }
+    const data = await res.json();
+    setInsights(data);
   }
 
   if (loading) {
@@ -116,7 +103,7 @@ export function InsightsOverview() {
     );
   }
 
-  const { stats, topTracks, dailyActivity } = insights;
+  const { stats, topTracks, dailyActivity, lastSyncedAt } = insights;
   const maxPlays = topTracks.reduce((max, track) => Math.max(max, track.playCount), 1);
   const statCards = [
     {
@@ -160,47 +147,16 @@ export function InsightsOverview() {
             <p className="text-slate-300 text-base sm:text-lg max-w-xl">
               A living snapshot of your Spotify habits. Track momentum, discover patterns, and stay in control.
             </p>
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={handleSync}
-                disabled={syncing}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#14f1b2] hover:bg-[#5bf2c6] text-[#04221d] font-semibold shadow-lg shadow-emerald-500/30 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {syncing ? "Actualizando..." : "Sincronizar ahora"}
-              </button>
-              <button
-                onClick={() => setSyncMessage(null)}
-                className="px-4 py-2 rounded-full border border-[#2b4a50] text-sm text-slate-200 hover:border-[#3a5c61]"
-              >
-                Limpiar estado
-              </button>
-            </div>
-            {syncMessage ? (
-              <div className="text-sm text-[#dff7f2] bg-[#0b1820] border border-[#1b3a40] rounded-full px-4 py-2 w-fit">
-                {syncMessage}
-              </div>
-            ) : null}
           </div>
 
-          <div className="relative rounded-3xl border border-[#1b3a40] bg-[#0f1b24]/80 p-6 shadow-2xl shadow-emerald-500/10 animate-float">
-            <div className="absolute -inset-4 rounded-full bg-emerald-400/10 blur-2xl" />
-            <div className="relative space-y-4">
-              <h2 className="text-xl font-semibold">Sync Spotlight</h2>
-              <p className="text-sm text-slate-300">
-                Fresh data fuels better insights. Keep your history updated for the cleanest trends.
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-2xl border border-[#1b3a40] bg-[#0b1820]/80 p-4">
-                  <p className="text-xs text-slate-400 uppercase tracking-wide">Timezone</p>
-                  <p className="text-sm text-slate-200 mt-1">{timeZone}</p>
-                </div>
-                <div className="rounded-2xl border border-[#1b3a40] bg-[#0b1820]/80 p-4">
-                  <p className="text-xs text-slate-400 uppercase tracking-wide">Status</p>
-                  <p className="text-sm text-slate-200 mt-1">{syncing ? "Syncing" : "Ready"}</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <SyncWidget
+            variant="hero"
+            initialLastSyncedAt={lastSyncedAt}
+            onSynced={refreshInsights}
+            title="Sincronizacion inteligente"
+            description="Actualiza tus reproducciones recientes para mantener el dashboard al dia."
+            className="animate-float"
+          />
         </section>
 
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

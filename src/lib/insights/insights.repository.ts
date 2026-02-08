@@ -26,6 +26,15 @@ export interface DailyListeningActivity {
   }>;
 }
 
+export async function getUserLastSyncedAt(userId: string): Promise<Date | null> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { lastSyncedAt: true },
+  });
+
+  return user?.lastSyncedAt ?? null;
+}
+
 /**
  * Fetches total listening statistics for a user
  */

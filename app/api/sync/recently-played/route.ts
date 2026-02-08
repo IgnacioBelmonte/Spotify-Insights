@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/src/lib/db/prisma";
 import { getValidAccessToken } from "@/src/lib/spotify/getValidToken";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const userId = (await cookies()).get("sid")?.value;
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -132,5 +132,11 @@ export async function GET(req: NextRequest) {
     created++;
   }
 
-  return NextResponse.json({ ok: true, created });
+  const syncedAt = new Date();
+  await prisma.user.update({
+    where: { id: userId },
+    data: { lastSyncedAt: syncedAt },
+  });
+
+  return NextResponse.json({ ok: true, created, syncedAt });
 }
