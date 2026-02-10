@@ -126,7 +126,7 @@ export function InsightsOverview({ isPremium }: InsightsOverviewProps) {
   }
 
   const { stats, topTracks, dailyActivity, lastSyncedAt } = insights;
-  const maxPlays = topTracks.reduce((max, track) => Math.max(max, track.playCount), 1);
+  const topRankedTracks = topTracks.slice(0, 10);
   const statCards = [
     {
       label: t("dashboard.stats.totalMinutes.label"),
@@ -199,27 +199,31 @@ export function InsightsOverview({ isPremium }: InsightsOverviewProps) {
         </section>
 
         <section className="space-y-6">
-          <div className="bg-[#0f1b24]/85 border border-[#1b3a40] rounded-2xl p-6 shadow-lg shadow-emerald-500/10">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-[#0f1b24]/85 border border-[#1b3a40] rounded-2xl p-4 sm:p-5 shadow-lg shadow-emerald-500/10">
+            <div className="mb-4 flex items-center justify-between">
               <h2 className="text-2xl font-semibold">{t("dashboard.topTracks.title")}</h2>
-              <span className="text-xs text-slate-400 uppercase tracking-wide">
-                {t("dashboard.topTracks.subtitle")}
-              </span>
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#2b4f55] bg-[#11252f] px-3 py-1">
+                <span className="text-[11px] text-slate-400 uppercase tracking-wide">
+                  {t("dashboard.topTracks.subtitle")}
+                </span>
+                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#1d3d48] px-1.5 text-[11px] font-semibold text-[#d6efe8]">
+                  {topRankedTracks.length}
+                </span>
+              </div>
             </div>
-            <div className="space-y-4">
-              {topTracks.length > 0 ? (
-                topTracks.map((track, idx) => (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              {topRankedTracks.length > 0 ? (
+                topRankedTracks.map((track, idx) => (
                   <TrackCard
                     key={track.id}
                     track={track}
                     rank={idx + 1}
-                    maxPlays={maxPlays}
                     isPremium={isPremium}
                     onOpenPlayback={openPlayerForTrack}
                   />
                 ))
               ) : (
-                <p className="text-slate-400 text-center py-4">
+                <p className="col-span-full py-4 text-center text-slate-400">
                   {t("dashboard.topTracks.empty")}
                 </p>
               )}
