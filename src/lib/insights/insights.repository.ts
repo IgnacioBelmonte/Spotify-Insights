@@ -29,6 +29,7 @@ export interface DailyListeningActivity {
     name: string;
     artistName: string;
     playedAt: string;
+    albumImageUrl?: string | null;
   }>;
 }
 
@@ -161,6 +162,7 @@ export async function getDailyListeningActivity(
         name: string;
         artistName: string;
         playedAt: string;
+        albumImageUrl?: string | null;
       }> | null;
     }>
   >`
@@ -171,7 +173,8 @@ export async function getDailyListeningActivity(
         le."trackId" AS track_id,
         le."playedAt" AS played_at,
         t."name" AS track_name,
-        t."artistName" AS artist_name
+        t."artistName" AS artist_name,
+        t."albumImageUrl" AS album_image_url
       FROM "ListeningEvent" le
       JOIN "Track" t ON le."trackId" = t."id"
       WHERE le."userId" = ${userId}
@@ -193,7 +196,8 @@ export async function getDailyListeningActivity(
             'trackId', e.track_id,
             'name', e.track_name,
             'artistName', e.artist_name,
-            'playedAt', e.played_at
+            'playedAt', e.played_at,
+            'albumImageUrl', e.album_image_url
           )
           ORDER BY e.played_at ASC
         ) FILTER (WHERE e.track_id IS NOT NULL),

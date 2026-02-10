@@ -5,13 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { t } from "@/src/lib/i18n";
 import { SpotifyPlaybackControls } from "@/src/components/player/SpotifyPlaybackControls";
 import { SpotifyFloatingPlayer } from "@/src/components/player/SpotifyFloatingPlayer";
-
-interface PlaybackTrack {
-  id: string;
-  name: string;
-  artistName: string;
-  albumImageUrl: string | null;
-}
+import type { PlaybackTrack } from "@/src/components/tracks/playback.types";
 
 interface SpotifyPlaybackModalProps {
   isOpen: boolean;
@@ -598,4 +592,3 @@ export function SpotifyPlaybackModal({
     </>
   );
 }
-

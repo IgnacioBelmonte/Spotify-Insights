@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useMemo } from "react";
 import { t } from "@/src/lib/i18n";
+import type { PlaybackTrack } from "@/src/components/tracks/playback.types";
 
 export interface TrackCardData {
   id: string;
@@ -23,7 +24,7 @@ interface TrackCardProps {
   rank: number;
   maxPlays: number;
   isPremium: boolean;
-  onOpenPlayback: (track: TrackCardData) => void;
+  onOpenPlayback: (track: PlaybackTrack) => void;
 }
 
 export function TrackCard({ track, rank, maxPlays, isPremium, onOpenPlayback }: TrackCardProps) {
@@ -93,7 +94,14 @@ export function TrackCard({ track, rank, maxPlays, isPremium, onOpenPlayback }: 
             </div>
             <button
               type="button"
-              onClick={() => onOpenPlayback(track)}
+              onClick={() =>
+                onOpenPlayback({
+                  id: track.id,
+                  name: track.name,
+                  artistName: track.artistName,
+                  albumImageUrl: track.albumImageUrl,
+                })
+              }
               disabled={!isPremium}
               className="inline-flex items-center gap-2 rounded-full border border-[#2c6665] bg-[#102a2f] px-4 py-2 text-sm font-semibold text-[#d5f2eb] transition hover:border-[#47be9a] hover:text-white disabled:cursor-not-allowed disabled:border-[#385054] disabled:bg-[#1a2f32] disabled:text-slate-400"
             >
@@ -117,4 +125,3 @@ export function TrackCard({ track, rank, maxPlays, isPremium, onOpenPlayback }: 
     </article>
   );
 }
-

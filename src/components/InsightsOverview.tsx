@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { InsightsOverviewDTO } from "@/src/lib/insights/insights.service";
 import DailyListeningChart from "./charts/DailyListeningChart";
 import { SyncWidget } from "./SyncWidget";
 import { t } from "@/src/lib/i18n";
 import { SpotifyPlaybackModal } from "./tracks/SpotifyPlaybackModal";
-import { TrackCard, type TrackCardData } from "./tracks/TrackCard";
+import { TrackCard } from "./tracks/TrackCard";
+import type { PlaybackTrack } from "./tracks/playback.types";
 
 interface InsightsOverviewProps {
   isPremium: boolean;
@@ -16,15 +17,20 @@ export function InsightsOverview({ isPremium }: InsightsOverviewProps) {
   const [insights, setInsights] = useState<InsightsOverviewDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [playerSeedTrack, setPlayerSeedTrack] = useState<TrackCardData | null>(null);
+  const [playerSeedTrack, setPlayerSeedTrack] = useState<PlaybackTrack | null>(null);
   const [isPlayerModalOpen, setIsPlayerModalOpen] = useState(false);
-  const [timeZone] = useState(() => {
+  const timeZone = useMemo(() => {
+    if (typeof window === "undefined") {
+      return "UTC";
+    }
+
     try {
-      return Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const localTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      return localTimeZone && localTimeZone.trim().length > 0 ? localTimeZone : "UTC";
     } catch {
       return "UTC";
     }
-  });
+  }, []);
 
   const insightsUrl = `/api/insights/overview?tz=${encodeURIComponent(timeZone)}`;
 
@@ -69,7 +75,7 @@ export function InsightsOverview({ isPremium }: InsightsOverviewProps) {
     setInsights(data);
   }
 
-  function openPlayerForTrack(track: TrackCardData) {
+  function openPlayerForTrack(track: PlaybackTrack) {
     setPlayerSeedTrack(track);
     setIsPlayerModalOpen(true);
   }
@@ -192,7 +198,7 @@ export function InsightsOverview({ isPremium }: InsightsOverviewProps) {
           ))}
         </section>
 
-        <section className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-6">
+        <section className="space-y-6">
           <div className="bg-[#0f1b24]/85 border border-[#1b3a40] rounded-2xl p-6 shadow-lg shadow-emerald-500/10">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-semibold">{t("dashboard.topTracks.title")}</h2>
@@ -231,9 +237,18 @@ export function InsightsOverview({ isPremium }: InsightsOverviewProps) {
               data={dailyActivity.map((day) => ({
                 date: day.date,
                 durationMs: day.durationMs,
-                plays: day.plays ?? [],
+                plays: (day.plays ?? []).map((play) => ({
+                  trackId: play.trackId,
+                  name: play.name,
+                  artistName: play.artistName,
+                  playedAt: play.playedAt,
+                  albumImageUrl: play.albumImageUrl ?? null,
+                })),
               }))}
               variant="embedded"
+              isPremium={isPremium}
+              onOpenPlayback={openPlayerForTrack}
+              timeZone={timeZone}
             />
           </div>
         </section>
