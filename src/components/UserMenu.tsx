@@ -68,20 +68,26 @@ export function UserMenu({ displayName, imageUrl, isPremium, onLogout }: UserMen
               {displayName?.[0]?.toUpperCase() ?? "U"}
             </div>
           )}
-          <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#14f1b2] ring-2 ring-[#0b1820]" />
+          {isPremium ? (
+            <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#102631] ring-2 ring-[#0b1820]">
+              <svg viewBox="0 0 24 24" className="h-2.5 w-2.5 text-[#14f1b2]" aria-hidden="true">
+                <circle cx="6.5" cy="8" r="2.1" fill="currentColor" />
+                <circle cx="12" cy="6.2" r="2.2" fill="currentColor" />
+                <circle cx="17.5" cy="8" r="2.1" fill="currentColor" />
+                <circle cx="9" cy="12.8" r="2.2" fill="currentColor" />
+                <circle cx="15" cy="12.8" r="2.2" fill="currentColor" />
+              </svg>
+            </span>
+          ) : (
+            <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-[#14f1b2] ring-2 ring-[#0b1820]" />
+          )}
         </div>
         <div className="hidden sm:flex flex-col items-start leading-tight">
           <span className="flex items-center gap-2 text-sm font-semibold text-white">
             <span>{displayName || t("userMenu.userFallback")}</span>
-            {isPremium ? (
-              <span className="inline-flex items-center gap-1 rounded-full border border-[#ffde80]/80 bg-gradient-to-r from-[#eab308] via-[#fcd34d] to-[#fde68a] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#3b2400] shadow-[0_0_18px_rgba(250,204,21,0.35)]">
-                <span aria-hidden="true">{"*"}</span>
-                {t("userMenu.premiumBadge")}
-              </span>
-            ) : null}
           </span>
           <span className="text-[11px] text-[#9cc9c4]">
-            {isPremium ? t("userMenu.premiumAccount") : t("userMenu.activeAccount")}
+            {t("userMenu.activeAccount")}
           </span>
         </div>
         <svg
@@ -104,33 +110,40 @@ export function UserMenu({ displayName, imageUrl, isPremium, onLogout }: UserMen
         <div className="absolute right-0 mt-3 w-60 bg-[#0f1b24] border border-[#1b3a40] rounded-2xl shadow-xl shadow-emerald-500/10 z-50 overflow-hidden">
           <div className="p-4 border-b border-[#1b3a40]">
             <div className="flex items-center gap-3">
-              {imageUrl ? (
-                <Image
-                  src={imageUrl}
-                  alt={displayName ?? t("common.avatarAlt")}
-                  width={40}
-                  height={40}
-                  className="rounded-full object-cover border border-[#1b3a40]"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-[#1c3a41] text-[#c6f5e5] flex items-center justify-center text-xs font-semibold border border-[#1b3a40]">
-                  {displayName?.[0]?.toUpperCase() ?? "U"}
-                </div>
-              )}
+              <div className="relative">
+                {imageUrl ? (
+                  <Image
+                    src={imageUrl}
+                    alt={displayName ?? t("common.avatarAlt")}
+                    width={40}
+                    height={40}
+                    className="rounded-full object-cover border border-[#1b3a40]"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-[#1c3a41] text-[#c6f5e5] flex items-center justify-center text-xs font-semibold border border-[#1b3a40]">
+                    {displayName?.[0]?.toUpperCase() ?? "U"}
+                  </div>
+                )}
+                {isPremium ? (
+                  <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#102631] ring-2 ring-[#0f1b24]">
+                    <svg viewBox="0 0 24 24" className="h-3 w-3 text-[#14f1b2]" aria-hidden="true">
+                      <circle cx="6.5" cy="8" r="2.1" fill="currentColor" />
+                      <circle cx="12" cy="6.2" r="2.2" fill="currentColor" />
+                      <circle cx="17.5" cy="8" r="2.1" fill="currentColor" />
+                      <circle cx="9" cy="12.8" r="2.2" fill="currentColor" />
+                      <circle cx="15" cy="12.8" r="2.2" fill="currentColor" />
+                    </svg>
+                  </span>
+                ) : null}
+              </div>
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-white truncate">
                   {displayName || t("userMenu.userFallback")}
                 </p>
                 <div className="mt-0.5 flex items-center gap-2">
                   <p className="text-xs text-[#9cc9c4]">
-                    {isPremium ? t("userMenu.premiumAccount") : t("userMenu.activeAccount")}
+                    {t("userMenu.activeAccount")}
                   </p>
-                  {isPremium ? (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-[#ffde80]/80 bg-gradient-to-r from-[#eab308] via-[#fcd34d] to-[#fde68a] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#3b2400]">
-                      <span aria-hidden="true">{"*"}</span>
-                      {t("userMenu.premiumBadge")}
-                    </span>
-                  ) : null}
                 </div>
               </div>
             </div>
