@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/src/lib/db/prisma";
 import { getValidAccessToken } from "@/src/lib/spotify/getValidToken";
-import { getCurrentSpotifyPlayback, SpotifyApiError } from "@/src/lib/spotify/player.service";
+import { getSpotifyPlaybackSnapshot, SpotifyApiError } from "@/src/lib/spotify/player.service";
 import { t } from "@/src/lib/i18n";
 
 export async function GET() {
@@ -22,10 +22,14 @@ export async function GET() {
     }
 
     const accessToken = await getValidAccessToken(userId);
-    const playback = await getCurrentSpotifyPlayback(accessToken);
+    const snapshot = await getSpotifyPlaybackSnapshot(accessToken);
 
     return NextResponse.json(
-      { playback },
+      {
+        playback: snapshot.playback,
+        devices: snapshot.devices,
+        syncedAt: new Date().toISOString(),
+      },
       {
         status: 200,
         headers: {

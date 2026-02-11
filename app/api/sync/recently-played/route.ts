@@ -10,8 +10,32 @@ export async function GET() {
       return NextResponse.json({ error: t("errors.unauthorized") }, { status: 401 });
     }
 
-    const { created, syncedAt } = await syncRecentlyPlayedForUser(userId);
-    return NextResponse.json({ ok: true, created, syncedAt });
+    const {
+      created,
+      syncedAt,
+      tracks,
+      artists,
+      audioFeatures,
+      audioFeaturesRequested,
+      audioFeaturesStatus,
+      audioFeaturesMessage,
+      events,
+    } =
+      await syncRecentlyPlayedForUser(userId);
+    return NextResponse.json({
+      ok: true,
+      created,
+      syncedAt,
+      stats: {
+        tracks,
+        artists,
+        audioFeatures,
+        audioFeaturesRequested,
+        audioFeaturesStatus,
+        audioFeaturesMessage,
+        events,
+      },
+    });
   } catch (error) {
     const message =
       error instanceof Error && error.message.trim().length > 0

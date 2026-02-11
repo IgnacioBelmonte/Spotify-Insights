@@ -18,6 +18,7 @@ export function InsightsOverview({ isPremium }: InsightsOverviewProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [playerSeedTrack, setPlayerSeedTrack] = useState<PlaybackTrack | null>(null);
+  const [playbackRequestId, setPlaybackRequestId] = useState(0);
   const [isPlayerModalOpen, setIsPlayerModalOpen] = useState(false);
   const timeZone = useMemo(() => {
     if (typeof window === "undefined") {
@@ -77,6 +78,7 @@ export function InsightsOverview({ isPremium }: InsightsOverviewProps) {
 
   function openPlayerForTrack(track: PlaybackTrack) {
     setPlayerSeedTrack(track);
+    setPlaybackRequestId((current) => current + 1);
     setIsPlayerModalOpen(true);
   }
 
@@ -262,12 +264,9 @@ export function InsightsOverview({ isPremium }: InsightsOverviewProps) {
         isOpen={isPlayerModalOpen}
         isPremium={isPremium}
         track={playerSeedTrack}
+        playbackRequestId={playbackRequestId}
         onClose={() => setIsPlayerModalOpen(false)}
-        onOpen={() => {
-          if (playerSeedTrack) {
-            setIsPlayerModalOpen(true);
-          }
-        }}
+        onOpen={() => setIsPlayerModalOpen(true)}
       />
     </main>
   );

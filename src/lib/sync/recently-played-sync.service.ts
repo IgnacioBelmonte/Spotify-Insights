@@ -27,8 +27,18 @@ interface SpotifyArtistProfile {
 
 export interface RecentlyPlayedSyncResult {
   created: number;
+  tracks: number;
+  artists: number;
+  audioFeatures: number;
+  audioFeaturesRequested: number;
+  audioFeaturesStatus: "ok" | "denied" | "error";
+  audioFeaturesMessage: string | null;
+  events: number;
   syncedAt: Date;
 }
+
+const MAX_SPOTIFY_RETRIES = 3;
+const RETRY_BASE_DELAY_MS = 450;
 
 function chunkArray<T>(items: T[], size: number): T[][] {
   const chunks: T[][] = [];
@@ -36,6 +46,55 @@ function chunkArray<T>(items: T[], size: number): T[][] {
     chunks.push(items.slice(index, index + size));
   }
   return chunks;
+}
+
+function isRetryableSpotifyStatus(status: number): boolean {
+  return status === 429 || status >= 500;
+}
+
+async function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+async function fetchSpotifyWithRetry(
+  url: string,
+  accessToken: string
+): Promise<Response> {
+  let lastNetworkError: unknown;
+
+  for (let attempt = 1; attempt <= MAX_SPOTIFY_RETRIES; attempt += 1) {
+    try {
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+
+      if (response.ok || !isRetryableSpotifyStatus(response.status) || attempt === MAX_SPOTIFY_RETRIES) {
+        return response;
+      }
+
+      const retryAfterHeader = response.headers.get("retry-after");
+      const retryAfterSeconds = retryAfterHeader ? Number.parseInt(retryAfterHeader, 10) : Number.NaN;
+      const retryDelayMs =
+        Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+          ? retryAfterSeconds * 1000
+          : RETRY_BASE_DELAY_MS * attempt;
+      await wait(retryDelayMs);
+    } catch (error) {
+      lastNetworkError = error;
+      if (attempt === MAX_SPOTIFY_RETRIES) {
+        break;
+      }
+      await wait(RETRY_BASE_DELAY_MS * attempt);
+    }
+  }
+
+  if (lastNetworkError instanceof Error) {
+    throw lastNetworkError;
+  }
+
+  throw new Error("Spotify request failed after retries");
 }
 
 async function executeOperationsInChunks(
@@ -50,15 +109,18 @@ async function executeOperationsInChunks(
 async function fetchRecentlyPlayedItems(
   accessToken: string
 ): Promise<SpotifyRecentlyPlayedItem[]> {
-  const response = await fetch(
+  const response = await fetchSpotifyWithRetry(
     "https://api.spotify.com/v1/me/player/recently-played?limit=50",
-    {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    }
+    accessToken
   );
 
   if (!response.ok) {
     const text = await response.text();
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(
+        "Spotify recently played permissions are missing. Please log out and log in again."
+      );
+    }
     throw new Error(text || `Spotify recently played request failed (${response.status})`);
   }
 
@@ -75,19 +137,59 @@ async function fetchAudioFeaturesByTrackId(
   accessToken: string
 ): Promise<Map<string, SpotifyAudioFeature>> {
   const map = new Map<string, SpotifyAudioFeature>();
-  if (trackIds.length === 0) {
+  const uniqueTrackIds = Array.from(new Set(trackIds));
+  if (uniqueTrackIds.length === 0) {
     return map;
   }
 
-  for (const batch of chunkArray(trackIds, 100)) {
-    const response = await fetch(
+  for (const batch of chunkArray(uniqueTrackIds, 100)) {
+    const response = await fetchSpotifyWithRetry(
       `https://api.spotify.com/v1/audio-features?ids=${batch.join(",")}`,
-      {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }
+      accessToken
     );
 
+    if (response.status === 403) {
+      throw new Error(
+        "Spotify denied access to the audio-features endpoint for this app."
+      );
+    }
+
+    if (response.status === 401) {
+      throw new Error(
+        "Spotify token is not authorized to read audio features."
+      );
+    }
+
     if (!response.ok) {
+      // Fallback to single-track endpoint so a partial outage does not empty all features.
+      for (const trackId of batch) {
+        try {
+          const singleResponse = await fetchSpotifyWithRetry(
+            `https://api.spotify.com/v1/audio-features/${trackId}`,
+            accessToken
+          );
+
+          if (singleResponse.status === 403) {
+            throw new Error(
+              "Spotify denied access to the audio-features endpoint for this app."
+            );
+          }
+
+          if (!singleResponse.ok) {
+            continue;
+          }
+
+          const feature = (await singleResponse.json()) as SpotifyAudioFeature | null;
+          if (feature?.id) {
+            map.set(feature.id, feature);
+          }
+        } catch (error) {
+          if (error instanceof Error && error.message.includes("audio-features endpoint")) {
+            throw error;
+          }
+        }
+      }
+
       continue;
     }
 
@@ -125,11 +227,9 @@ async function fetchArtistImagesByArtistId(
   }
 
   for (const batch of chunkArray(artistIds, 50)) {
-    const response = await fetch(
+    const response = await fetchSpotifyWithRetry(
       `https://api.spotify.com/v1/artists?ids=${batch.join(",")}`,
-      {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }
+      accessToken
     );
 
     if (!response.ok) {
@@ -245,25 +345,25 @@ async function persistAudioFeatures(
     prisma.audioFeatures.upsert({
       where: { trackId },
       update: {
-        danceability: features.danceability,
-        energy: features.energy,
-        valence: features.valence,
-        tempo: features.tempo,
-        acousticness: features.acousticness,
-        instrumentalness: features.instrumentalness,
-        liveness: features.liveness,
-        speechiness: features.speechiness,
+        danceability: features.danceability ?? null,
+        energy: features.energy ?? null,
+        valence: features.valence ?? null,
+        tempo: features.tempo ?? null,
+        acousticness: features.acousticness ?? null,
+        instrumentalness: features.instrumentalness ?? null,
+        liveness: features.liveness ?? null,
+        speechiness: features.speechiness ?? null,
       },
       create: {
         trackId,
-        danceability: features.danceability,
-        energy: features.energy,
-        valence: features.valence,
-        tempo: features.tempo,
-        acousticness: features.acousticness,
-        instrumentalness: features.instrumentalness,
-        liveness: features.liveness,
-        speechiness: features.speechiness,
+        danceability: features.danceability ?? null,
+        energy: features.energy ?? null,
+        valence: features.valence ?? null,
+        tempo: features.tempo ?? null,
+        acousticness: features.acousticness ?? null,
+        instrumentalness: features.instrumentalness ?? null,
+        liveness: features.liveness ?? null,
+        speechiness: features.speechiness ?? null,
       },
     })
   );
@@ -321,20 +421,58 @@ export async function syncRecentlyPlayedForUser(
   const items = await fetchRecentlyPlayedItems(accessToken);
   const payload = buildRecentlyPlayedSyncPayload(items);
 
-  const [audioFeaturesByTrackId, artistImageById] = await Promise.all([
+  const requestedAudioFeatureCount = payload.tracks.length;
+  let audioFeaturesByTrackId = new Map<string, SpotifyAudioFeature>();
+  let audioFeaturesStatus: "ok" | "denied" | "error" = "ok";
+  let audioFeaturesMessage: string | null = null;
+
+  const [audioFeaturesResult, artistImageById] = await Promise.all([
     fetchAudioFeaturesByTrackId(
       payload.tracks.map((track) => track.id),
       accessToken
-    ),
+    ).catch((error: unknown) => {
+      if (error instanceof Error) {
+        const message = error.message.trim();
+        if (message.includes("audio-features endpoint")) {
+          return {
+            status: "denied" as const,
+            message,
+            map: new Map<string, SpotifyAudioFeature>(),
+          };
+        }
+
+        return {
+          status: "error" as const,
+          message,
+          map: new Map<string, SpotifyAudioFeature>(),
+        };
+      }
+
+      return {
+        status: "error" as const,
+        message: "Unexpected audio-features error.",
+        map: new Map<string, SpotifyAudioFeature>(),
+      };
+    }),
     fetchArtistImagesByArtistId(
       payload.artists.map((artist) => artist.id),
       accessToken
     ),
   ]);
 
+  if (audioFeaturesResult instanceof Map) {
+    audioFeaturesByTrackId = audioFeaturesResult;
+  } else {
+    audioFeaturesByTrackId = audioFeaturesResult.map;
+    audioFeaturesStatus = audioFeaturesResult.status;
+    audioFeaturesMessage = audioFeaturesResult.message;
+  }
+
   await persistArtistCatalog(artistImageById, payload.artists);
   await persistTrackCatalog(payload.tracks);
-  await persistAudioFeatures(audioFeaturesByTrackId);
+  if (audioFeaturesByTrackId.size > 0) {
+    await persistAudioFeatures(audioFeaturesByTrackId);
+  }
   await persistListeningEvents(userId, payload.events);
 
   const syncedAt = new Date();
@@ -345,6 +483,13 @@ export async function syncRecentlyPlayedForUser(
 
   return {
     created: payload.events.length,
+    tracks: payload.tracks.length,
+    artists: payload.artists.length,
+    audioFeatures: audioFeaturesByTrackId.size,
+    audioFeaturesRequested: requestedAudioFeatureCount,
+    audioFeaturesStatus,
+    audioFeaturesMessage,
+    events: payload.events.length,
     syncedAt,
   };
 }
