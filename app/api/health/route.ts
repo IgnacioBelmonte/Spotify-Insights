@@ -2,16 +2,25 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/src/lib/db/prisma";
 
 export async function GET() {
-  // upsert de prueba (no definitivo, solo para validar DB)
-  const user = await prisma.user.upsert({
-    where: { spotifyUserId: "test_user" },
-    update: { displayName: "Test User" },
-    create: { spotifyUserId: "test_user", displayName: "Test User" },
-  });
+  try {
+    await prisma.$queryRaw`SELECT 1`;
 
-  return NextResponse.json({
-    ok: true,
-    db: "connected",
-    userId: user.id,
-  });
+    return NextResponse.json({
+      ok: true,
+      service: "spotify-insights",
+      db: "connected",
+      timestamp: new Date().toISOString(),
+      version: process.env.npm_package_version ?? "unknown",
+    });
+  } catch {
+    return NextResponse.json(
+      {
+        ok: false,
+        service: "spotify-insights",
+        db: "disconnected",
+        error: "Database unavailable",
+      },
+      { status: 503 }
+    );
+  }
 }
