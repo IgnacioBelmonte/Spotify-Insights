@@ -17,6 +17,8 @@ interface InsightsOverviewProps {
   isPremium: boolean;
 }
 
+type DashboardSection = "summary" | "activity" | "live";
+
 function formatDurationFromMs(durationMs: number): string {
   if (durationMs <= 0) return "0m";
   const totalMinutes = Math.round(durationMs / 60000);
@@ -67,6 +69,7 @@ export function InsightsOverview({ isPremium }: InsightsOverviewProps) {
   const [releaseTracksByAlbumId, setReleaseTracksByAlbumId] = useState<Record<string, PlaylistTrackEntry[]>>({});
   const [releaseTracksLoadingId, setReleaseTracksLoadingId] = useState<string | null>(null);
   const [releaseTracksErrors, setReleaseTracksErrors] = useState<Record<string, string>>({});
+  const [activeSection, setActiveSection] = useState<DashboardSection>("summary");
   const timeZone = useMemo(() => {
     if (typeof window === "undefined") {
       return "UTC";
@@ -399,6 +402,23 @@ export function InsightsOverview({ isPremium }: InsightsOverviewProps) {
       caption: t("dashboard.intelligence.avgTrack.caption"),
     },
   ];
+  const sectionTabs: Array<{ key: DashboardSection; title: string; subtitle: string }> = [
+    {
+      key: "summary",
+      title: t("dashboard.sections.summary.title"),
+      subtitle: t("dashboard.sections.summary.subtitle"),
+    },
+    {
+      key: "activity",
+      title: t("dashboard.sections.activity.title"),
+      subtitle: t("dashboard.sections.activity.subtitle"),
+    },
+    {
+      key: "live",
+      title: t("dashboard.sections.live.title"),
+      subtitle: t("dashboard.sections.live.subtitle"),
+    },
+  ];
 
   return (
     <main className="min-h-screen bg-[#050b10] text-[#e6f3f1] relative overflow-hidden" suppressHydrationWarning>
@@ -431,6 +451,28 @@ export function InsightsOverview({ isPremium }: InsightsOverviewProps) {
           />
         </section>
 
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {sectionTabs.map((section) => {
+            const isActive = activeSection === section.key;
+            return (
+              <button
+                key={section.key}
+                type="button"
+                onClick={() => setActiveSection(section.key)}
+                className={`rounded-2xl border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1dd6a7]/60 ${
+                  isActive
+                    ? "border-emerald-400/60 bg-emerald-500/10"
+                    : "border-[#1b3a40] bg-[#0f1b24]/80 hover:border-[#2b5f67]"
+                }`}
+              >
+                <p className="text-sm font-semibold text-white">{section.title}</p>
+                <p className="mt-1 text-xs text-slate-400">{section.subtitle}</p>
+              </button>
+            );
+          })}
+        </section>
+
+        {activeSection === "summary" ? (
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {statCards.map((stat, index) => (
             <div
@@ -447,8 +489,12 @@ export function InsightsOverview({ isPremium }: InsightsOverviewProps) {
             </div>
           ))}
         </section>
+        ) : null}
 
+        {activeSection !== "summary" ? (
         <section className="space-y-6">
+          {activeSection === "activity" ? (
+          <>
           <div className="bg-[#0f1b24]/85 border border-[#1b3a40] rounded-2xl p-4 sm:p-5 shadow-lg shadow-emerald-500/10">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-2xl font-semibold">{t("dashboard.topTracks.title")}</h2>
@@ -529,8 +575,10 @@ export function InsightsOverview({ isPremium }: InsightsOverviewProps) {
           </div>
 
           <TimeIntelligenceHeatmap timeZone={timeZone} />
+          </>
+          ) : null}
 
-          {spotifyLive ? (
+          {activeSection === "live" ? (spotifyLive ? (
             <div className="space-y-4">
               {spotifyLive.reconnectRequired ? (
                 <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
@@ -959,8 +1007,9 @@ export function InsightsOverview({ isPremium }: InsightsOverviewProps) {
                 {t("dashboard.live.unavailable")}
               </p>
             </div>
-          )}
+          )) : null}
         </section>
+        ) : null}
       </div>
 
       <SpotifyPlaybackModal
