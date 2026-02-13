@@ -280,4 +280,14 @@ export const es: Record<string, string> = {
   "taste.genres.title": "Top géneros",
   "taste.signature.title": "Firma",
   "taste.signature.body": "Tiendes a {energy} de energía con una puntuación de ánimo de {mood}.",
+
+  "time.title": "Inteligencia temporal",
+  "time.window": "Últimos {days} días",
+  "time.loading": "Cargando inteligencia temporal...",
+  "time.error": "No se pudo cargar la inteligencia temporal: {message}",
+  "time.plays": "reproducciones",
+  "time.legend.low": "Actividad baja",
+  "time.legend.high": "Actividad alta",
+  "time.mostActive": "Momento más activo",
+  "time.totalPlays": "{plays} reproducciones analizadas",
 };

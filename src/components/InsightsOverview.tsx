@@ -11,6 +11,7 @@ import type { PlaybackTrack } from "./tracks/playback.types";
 import { CompactPlaybackTrackItem } from "./tracks/CompactPlaybackTrackItem";
 import { CompactPlaylistItem } from "./playlists/CompactPlaylistItem";
 import { PlaylistTracksPanel, type PlaylistTrackEntry } from "./playlists/PlaylistTracksPanel";
+import { TimeIntelligenceHeatmap } from "./time/TimeIntelligenceHeatmap";
 
 interface InsightsOverviewProps {
   isPremium: boolean;
@@ -526,6 +527,8 @@ export function InsightsOverview({ isPremium }: InsightsOverviewProps) {
               ))}
             </div>
           </div>
+
+          <TimeIntelligenceHeatmap timeZone={timeZone} />
 
           {spotifyLive ? (
             <div className="space-y-4">
