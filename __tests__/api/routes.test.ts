@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports, @typescript-eslint/no-unused-vars */
 import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 import { getInsightsOverview } from "@/src/lib/insights/insights.service";
 
