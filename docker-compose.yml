@@ -12,5 +12,19 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  app:
+    build: .
+    container_name: spotify_insights_app
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      # Force DB host to the docker service name
+      DATABASE_URL: postgresql://spotify:spotify@db:5432/spotify_insights?schema=public
+
 volumes:
   postgres_data:

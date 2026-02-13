@@ -1,4 +1,4 @@
-export const es = {
+export const es: Record<string, string> = {
   "meta.title": "Spotify Insights",
   "meta.description": "Tus analíticas de escucha, impulsadas por Spotify.",
 
@@ -243,4 +243,4 @@ export const es = {
   "errors.unauthorized": "No autorizado",
   "errors.fetchInsights": "No se pudieron cargar los insights",
   "errors.syncFailed": "La sincronización falló.",
-} as const;
+};
