@@ -37,12 +37,20 @@ export default async function Dashboard() {
               <span className="text-[#9ef3d4]">{t("common.brandSpotify")}</span>
               <span>{t("common.brandInsights")}</span>
             </Link>
-            <Link
-              href="/share"
-              className="inline-flex items-center rounded-full border border-[#2f6164] bg-[#11323a] px-3 py-2 text-xs sm:text-sm font-semibold text-[#dff7f2] transition hover:bg-[#18444f]"
-            >
-              {t("dashboard.weeklyRecapCta")}
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/share"
+                className="inline-flex items-center rounded-full border border-[#2f6164] bg-[#11323a] px-3 py-2 text-xs sm:text-sm font-semibold text-[#dff7f2] transition hover:bg-[#18444f]"
+              >
+                {t("dashboard.weeklyRecapCta")}
+              </Link>
+              <Link
+                href="/taste-profile"
+                className="inline-flex items-center rounded-full border border-[#30576f] bg-[#122c3f] px-3 py-2 text-xs sm:text-sm font-semibold text-[#dbeafe] transition hover:bg-[#17364d]"
+              >
+                {t("dashboard.tasteProfileCta")}
+              </Link>
+            </div>
           </div>
           <UserMenu
             displayName={user.displayName}
