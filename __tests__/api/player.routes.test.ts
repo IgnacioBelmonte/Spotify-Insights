@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/src/lib/db/prisma";
 import { getValidAccessToken } from "@/src/lib/spotify/getValidToken";
 import {
-  getCurrentSpotifyPlayback,
+  getSpotifyPlaybackSnapshot,
   playTrackOnSpotifyDevice,
 } from "@/src/lib/spotify/player.service";
 import { readNextResponse } from "../utils/route.test-utils";
@@ -25,8 +25,18 @@ jest.mock("@/src/lib/spotify/getValidToken", () => ({
 }));
 
 jest.mock("@/src/lib/spotify/player.service", () => ({
-  getCurrentSpotifyPlayback: jest.fn(),
+  getSpotifyPlaybackSnapshot: jest.fn(),
   playTrackOnSpotifyDevice: jest.fn(),
+  SpotifyApiError: class SpotifyApiError extends Error {
+    status: number;
+    body: string;
+
+    constructor(status: number, body: string, fallbackMessage: string) {
+      super(body || fallbackMessage);
+      this.status = status;
+      this.body = body;
+    }
+  },
 }));
 
 type CookieStore = Awaited<ReturnType<typeof cookies>>;
@@ -38,8 +48,8 @@ const mockedGetValidAccessToken = getValidAccessToken as jest.MockedFunction<
 const mockedPlayTrackOnSpotifyDevice = playTrackOnSpotifyDevice as jest.MockedFunction<
   typeof playTrackOnSpotifyDevice
 >;
-const mockedGetCurrentSpotifyPlayback = getCurrentSpotifyPlayback as jest.MockedFunction<
-  typeof getCurrentSpotifyPlayback
+const mockedGetSpotifyPlaybackSnapshot = getSpotifyPlaybackSnapshot as jest.MockedFunction<
+  typeof getSpotifyPlaybackSnapshot
 >;
 const mockedUserFindUnique = prisma.user.findUnique as unknown as jest.Mock;
 
@@ -144,14 +154,22 @@ describe("API Routes - /api/spotify/player/current", () => {
     setSidCookie("user-1");
     mockedUserFindUnique.mockResolvedValue({ isPremium: true });
     mockedGetValidAccessToken.mockResolvedValue("spotify-access-token");
-    mockedGetCurrentSpotifyPlayback.mockResolvedValue({
-      trackId: "track-live",
-      trackName: "Live Track",
-      artistName: "Live Artist",
-      albumImageUrl: "https://i.scdn.co/image/live",
-      durationMs: 180000,
-      positionMs: 42000,
-      isPlaying: true,
+    mockedGetSpotifyPlaybackSnapshot.mockResolvedValue({
+      playback: {
+        trackId: "track-live",
+        trackName: "Live Track",
+        artistName: "Live Artist",
+        albumImageUrl: "https://i.scdn.co/image/live",
+        durationMs: 180000,
+        positionMs: 42000,
+        isPlaying: true,
+        deviceId: "device-1",
+        deviceName: "Web Player",
+        shuffleEnabled: false,
+        repeatMode: "off",
+        volumePercent: 80,
+      },
+      devices: [],
     });
 
     const { GET } = await import("@/app/api/spotify/player/current/route");

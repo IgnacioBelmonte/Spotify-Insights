@@ -1,3 +1,5 @@
+/* eslint-disable import/no-anonymous-default-export */
+
 import { mockDeep, DeepMockProxy } from "jest-mock-extended";
 import { PrismaClient } from "@prisma/client";
 

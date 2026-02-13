@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Test utilities for Route Handler tests
 export function makeReq(url: string, cookieHeader = "") {
   return {

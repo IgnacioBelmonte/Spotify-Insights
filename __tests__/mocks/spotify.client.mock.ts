@@ -1,3 +1,5 @@
+/* eslint-disable import/no-anonymous-default-export */
+
 // Centralized Spotify client mock
 export const exchangeCodeForToken = jest.fn();
 export const fetchSpotifyMe = jest.fn();

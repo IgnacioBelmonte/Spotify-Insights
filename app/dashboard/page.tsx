@@ -7,6 +7,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { t } from "@/src/lib/i18n";
 
+export const dynamic = "force-dynamic";
+
 export default async function Dashboard() {
   const sid = (await cookies()).get("sid")?.value;
   if (!sid) redirect("/");
