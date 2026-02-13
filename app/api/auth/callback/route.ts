@@ -4,7 +4,19 @@ import { prisma } from "@/src/lib/db/prisma";
 import { t } from "@/src/lib/i18n";
 import { isSpotifyPremiumProduct } from "@/src/lib/spotify/profile";
 
+function getAppUrl(req: Request) {
+  if (process.env.APP_URL) return process.env.APP_URL;
+
+  try {
+    return new URL(req.url).origin;
+  } catch {
+    return "http://localhost:3000";
+  }
+}
+
 export async function GET(req: Request) {
+  const appUrl = getAppUrl(req);
+
   try {
     const url = new URL(req.url);
     const code = url.searchParams.get("code");
@@ -13,13 +25,13 @@ export async function GET(req: Request) {
 
     if (err) {
       console.error("[oauth callback] Spotify error:", err);
-      return NextResponse.redirect(`${process.env.APP_URL}/?error=${encodeURIComponent(err)}`);
+      return NextResponse.redirect(`${appUrl}/?error=${encodeURIComponent(err)}`);
     }
 
     if (!code || !state) {
       console.error("[oauth callback] Missing code or state");
       return NextResponse.redirect(
-        `${process.env.APP_URL}/?error=${encodeURIComponent(t("auth.missingCode"))}`
+        `${appUrl}/?error=${encodeURIComponent(t("auth.missingCode"))}`
       );
     }
 
@@ -33,14 +45,14 @@ export async function GET(req: Request) {
     if (!cookieState) {
       console.error("[oauth callback] No oauth_state cookie found - possible CSRF or incognito mode issue");
       return NextResponse.redirect(
-        `${process.env.APP_URL}/?error=${encodeURIComponent(t("auth.sessionExpired"))}`
+        `${appUrl}/?error=${encodeURIComponent(t("auth.sessionExpired"))}`
       );
     }
 
     if (cookieState !== state) {
       console.error("[oauth callback] State mismatch - cookie:", cookieState, "param:", state);
       return NextResponse.redirect(
-        `${process.env.APP_URL}/?error=${encodeURIComponent(t("auth.invalidSessionState"))}`
+        `${appUrl}/?error=${encodeURIComponent(t("auth.invalidSessionState"))}`
       );
     }
 
@@ -52,7 +64,7 @@ export async function GET(req: Request) {
       const errorMsg =
         exchangeErr instanceof Error ? exchangeErr.message : t("auth.tokenExchangeFailed");
       return NextResponse.redirect(
-        `${process.env.APP_URL}/?error=${encodeURIComponent(errorMsg)}`
+        `${appUrl}/?error=${encodeURIComponent(errorMsg)}`
       );
     }
 
@@ -62,7 +74,7 @@ export async function GET(req: Request) {
     } catch (meErr) {
       console.error("[oauth callback] Fetch user error:", meErr);
       return NextResponse.redirect(
-        `${process.env.APP_URL}/?error=${encodeURIComponent(t("auth.fetchProfileFailed"))}`
+        `${appUrl}/?error=${encodeURIComponent(t("auth.fetchProfileFailed"))}`
       );
     }
 
@@ -101,7 +113,7 @@ export async function GET(req: Request) {
     });
 
     // Sesión mínima: cookie con userId
-    const res = NextResponse.redirect(`${process.env.APP_URL}/dashboard`);
+    const res = NextResponse.redirect(`${appUrl}/dashboard`);
     res.cookies.set("sid", user.id, {
       httpOnly: true,
       sameSite: "lax",
@@ -116,7 +128,7 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error("[oauth callback] Unexpected error:", error);
     return NextResponse.redirect(
-      `${process.env.APP_URL}/?error=${encodeURIComponent(t("auth.authFailed"))}`
+      `${appUrl}/?error=${encodeURIComponent(t("auth.authFailed"))}`
     );
   }
 }
