@@ -13,8 +13,12 @@ export interface SpotifyTrack {
   id: string;
   name: string;
   duration_ms?: number | null;
+  explicit?: boolean | null;
   album?: {
     name?: string | null;
+    album_type?: string | null;
+    release_date?: string | null;
+    release_date_precision?: string | null;
     images?: SpotifyImage[];
   };
   artists?: SpotifyTrackArtist[];
@@ -22,6 +26,10 @@ export interface SpotifyTrack {
 
 export interface SpotifyRecentlyPlayedItem {
   played_at: string;
+  context?: {
+    type?: string | null;
+    uri?: string | null;
+  } | null;
   track?: SpotifyTrack | null;
 }
 
@@ -42,6 +50,10 @@ export interface SyncTrackDraft {
   albumName: string | null;
   albumImageUrl: string | null;
   durationMs: number | null;
+  explicit: boolean | null;
+  albumType: string | null;
+  albumReleaseDate: string | null;
+  albumReleaseDatePrecision: string | null;
   artists: SyncTrackArtistDraft[];
 }
 
@@ -49,6 +61,8 @@ export interface SyncListeningEventDraft {
   trackId: string;
   playedAt: Date;
   durationMs: number | null;
+  contextType: string | null;
+  contextUri: string | null;
 }
 
 export interface SyncPayload {
@@ -73,6 +87,11 @@ function mergeTrackDraft(existing: SyncTrackDraft, incoming: SyncTrackDraft): Sy
     albumName: incoming.albumName ?? existing.albumName,
     albumImageUrl: incoming.albumImageUrl ?? existing.albumImageUrl,
     durationMs: incoming.durationMs ?? existing.durationMs,
+    explicit: incoming.explicit ?? existing.explicit,
+    albumType: incoming.albumType ?? existing.albumType,
+    albumReleaseDate: incoming.albumReleaseDate ?? existing.albumReleaseDate,
+    albumReleaseDatePrecision:
+      incoming.albumReleaseDatePrecision ?? existing.albumReleaseDatePrecision,
     artists: existing.artists.length > 0 ? existing.artists : incoming.artists,
   };
 }
@@ -144,6 +163,10 @@ export function buildRecentlyPlayedSyncPayload(items: SpotifyRecentlyPlayedItem[
       albumName: track.album?.name ?? null,
       albumImageUrl: getAlbumImageUrl(track),
       durationMs: trackDurationMs,
+      explicit: typeof track.explicit === "boolean" ? track.explicit : null,
+      albumType: track.album?.album_type ?? null,
+      albumReleaseDate: track.album?.release_date ?? null,
+      albumReleaseDatePrecision: track.album?.release_date_precision ?? null,
       artists,
     };
 
@@ -154,6 +177,8 @@ export function buildRecentlyPlayedSyncPayload(items: SpotifyRecentlyPlayedItem[
       trackId: track.id,
       playedAt,
       durationMs,
+      contextType: item.context?.type ?? null,
+      contextUri: item.context?.uri ?? null,
     });
   }
 

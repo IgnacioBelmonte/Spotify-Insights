@@ -33,6 +33,42 @@ export interface DailyListeningActivity {
   }>;
 }
 
+export interface ListeningRhythmStats {
+  sessionCount: number;
+  peakHourLocal: number | null;
+  longestStreakDays: number;
+  activeStreakDays: number;
+}
+
+export interface DiscoveryStats {
+  totalPlays30d: number;
+  uniqueTracks30d: number;
+  uniqueArtists30d: number;
+  newTracks30d: number;
+  newArtists30d: number;
+  repeatPlays30d: number;
+}
+
+export interface DistributionPoint {
+  label: string;
+  plays: number;
+  share: number;
+}
+
+export interface ConsumptionProfileStats {
+  averageTrackDurationMs: number;
+  explicitPlayShare: number;
+  explicitPlays: number;
+  totalPlays: number;
+  albumTypeDistribution: DistributionPoint[];
+  releaseDecadeDistribution: DistributionPoint[];
+}
+
+export interface ContextDistributionStats {
+  totalPlays: number;
+  distribution: DistributionPoint[];
+}
+
 export async function getUserLastSyncedAt(userId: string): Promise<Date | null> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -214,4 +250,262 @@ export async function getDailyListeningActivity(
     durationMs: Number(activity.total_duration_ms),
     plays: Array.isArray(activity.plays) ? activity.plays : [],
   }));
+}
+
+function calculateDayStreaks(orderedDays: string[]): { longest: number; active: number } {
+  if (orderedDays.length === 0) {
+    return { longest: 0, active: 0 };
+  }
+
+  let longest = 1;
+  let current = 1;
+
+  for (let index = 1; index < orderedDays.length; index += 1) {
+    const previousDay = new Date(`${orderedDays[index - 1]}T00:00:00Z`);
+    const currentDay = new Date(`${orderedDays[index]}T00:00:00Z`);
+    const deltaDays = Math.round((currentDay.getTime() - previousDay.getTime()) / 86_400_000);
+
+    if (deltaDays === 1) {
+      current += 1;
+      if (current > longest) {
+        longest = current;
+      }
+    } else if (deltaDays > 1) {
+      current = 1;
+    }
+  }
+
+  let active = 1;
+  for (let index = orderedDays.length - 1; index > 0; index -= 1) {
+    const currentDay = new Date(`${orderedDays[index]}T00:00:00Z`);
+    const previousDay = new Date(`${orderedDays[index - 1]}T00:00:00Z`);
+    const deltaDays = Math.round((currentDay.getTime() - previousDay.getTime()) / 86_400_000);
+
+    if (deltaDays === 1) {
+      active += 1;
+      continue;
+    }
+
+    break;
+  }
+
+  return { longest, active };
+}
+
+export async function getListeningRhythmStats(
+  userId: string,
+  timeZone?: string | null
+): Promise<ListeningRhythmStats> {
+  const tz = timeZone && timeZone.trim().length > 0 ? timeZone.trim() : "UTC";
+
+  const [sessionRow, peakHourRow, streakRows] = await Promise.all([
+    prisma.$queryRaw<Array<{ session_count: number }>>`
+      WITH ordered_events AS (
+        SELECT
+          le."playedAt",
+          LAG(le."playedAt") OVER (ORDER BY le."playedAt") AS previous_played_at
+        FROM "ListeningEvent" le
+        WHERE le."userId" = ${userId}
+      )
+      SELECT
+        COALESCE(
+          SUM(
+            CASE
+              WHEN previous_played_at IS NULL THEN 1
+              WHEN EXTRACT(EPOCH FROM ("playedAt" - previous_played_at)) / 60 > 30 THEN 1
+              ELSE 0
+            END
+          ),
+          0
+        )::INTEGER AS session_count
+      FROM ordered_events
+    `,
+    prisma.$queryRaw<Array<{ hour_local: number }>>`
+      SELECT
+        EXTRACT(HOUR FROM (le."playedAt" AT TIME ZONE ${tz}))::INTEGER AS hour_local,
+        COUNT(*)::INTEGER AS plays
+      FROM "ListeningEvent" le
+      WHERE le."userId" = ${userId}
+      GROUP BY hour_local
+      ORDER BY plays DESC, hour_local ASC
+      LIMIT 1
+    `,
+    prisma.$queryRaw<Array<{ day_local: string }>>`
+      SELECT DISTINCT
+        CAST(DATE(le."playedAt" AT TIME ZONE ${tz}) AS TEXT) AS day_local
+      FROM "ListeningEvent" le
+      WHERE le."userId" = ${userId}
+      ORDER BY day_local ASC
+    `,
+  ]);
+
+  const orderedDays = streakRows.map((row) => row.day_local).filter(Boolean);
+  const streaks = calculateDayStreaks(orderedDays);
+
+  return {
+    sessionCount: sessionRow[0]?.session_count ?? 0,
+    peakHourLocal: peakHourRow[0]?.hour_local ?? null,
+    longestStreakDays: streaks.longest,
+    activeStreakDays: streaks.active,
+  };
+}
+
+export async function getDiscoveryStats(userId: string): Promise<DiscoveryStats> {
+  const [rollingRow, newTrackRow, newArtistRow] = await Promise.all([
+    prisma.$queryRaw<
+      Array<{
+        total_plays_30d: number;
+        unique_tracks_30d: number;
+        unique_artists_30d: number;
+      }>
+    >`
+      SELECT
+        COUNT(le."id")::INTEGER AS total_plays_30d,
+        COUNT(DISTINCT le."trackId")::INTEGER AS unique_tracks_30d,
+        COUNT(DISTINCT t."artistName")::INTEGER AS unique_artists_30d
+      FROM "ListeningEvent" le
+      JOIN "Track" t ON t."id" = le."trackId"
+      WHERE le."userId" = ${userId}
+        AND le."playedAt" >= NOW() - INTERVAL '30 days'
+    `,
+    prisma.$queryRaw<Array<{ new_tracks_30d: number }>>`
+      SELECT COUNT(*)::INTEGER AS new_tracks_30d
+      FROM (
+        SELECT
+          le."trackId",
+          MIN(le."playedAt") AS first_played_at
+        FROM "ListeningEvent" le
+        WHERE le."userId" = ${userId}
+        GROUP BY le."trackId"
+      ) first_plays
+      WHERE first_plays.first_played_at >= NOW() - INTERVAL '30 days'
+    `,
+    prisma.$queryRaw<Array<{ new_artists_30d: number }>>`
+      SELECT COUNT(*)::INTEGER AS new_artists_30d
+      FROM (
+        SELECT
+          t."artistName",
+          MIN(le."playedAt") AS first_played_at
+        FROM "ListeningEvent" le
+        JOIN "Track" t ON t."id" = le."trackId"
+        WHERE le."userId" = ${userId}
+        GROUP BY t."artistName"
+      ) first_artist_plays
+      WHERE first_artist_plays.first_played_at >= NOW() - INTERVAL '30 days'
+    `,
+  ]);
+
+  const totalPlays30d = rollingRow[0]?.total_plays_30d ?? 0;
+  const uniqueTracks30d = rollingRow[0]?.unique_tracks_30d ?? 0;
+  const repeatPlays30d = Math.max(0, totalPlays30d - uniqueTracks30d);
+
+  return {
+    totalPlays30d,
+    uniqueTracks30d,
+    uniqueArtists30d: rollingRow[0]?.unique_artists_30d ?? 0,
+    newTracks30d: newTrackRow[0]?.new_tracks_30d ?? 0,
+    newArtists30d: newArtistRow[0]?.new_artists_30d ?? 0,
+    repeatPlays30d,
+  };
+}
+
+function toDistributionPoints(rows: Array<{ label: string; plays: number }>): DistributionPoint[] {
+  const total = rows.reduce((sum, item) => sum + item.plays, 0);
+  if (total === 0) {
+    return [];
+  }
+
+  return rows.map((row) => ({
+    label: row.label,
+    plays: row.plays,
+    share: row.plays / total,
+  }));
+}
+
+export async function getConsumptionProfileStats(
+  userId: string
+): Promise<ConsumptionProfileStats> {
+  const [summaryRow, albumTypeRows, decadeRows] = await Promise.all([
+    prisma.$queryRaw<
+      Array<{
+        average_track_duration_ms: number | null;
+        explicit_plays: number;
+        total_plays: number;
+      }>
+    >`
+      SELECT
+        AVG(CAST(t."durationMs" AS DOUBLE PRECISION)) AS average_track_duration_ms,
+        COUNT(*) FILTER (WHERE t."explicit" = TRUE)::INTEGER AS explicit_plays,
+        COUNT(*)::INTEGER AS total_plays
+      FROM "ListeningEvent" le
+      JOIN "Track" t ON t."id" = le."trackId"
+      WHERE le."userId" = ${userId}
+    `,
+    prisma.$queryRaw<Array<{ label: string; plays: number }>>`
+      SELECT
+        COALESCE(NULLIF(t."albumType", ''), 'unknown') AS label,
+        COUNT(*)::INTEGER AS plays
+      FROM "ListeningEvent" le
+      JOIN "Track" t ON t."id" = le."trackId"
+      WHERE le."userId" = ${userId}
+      GROUP BY label
+      ORDER BY plays DESC
+      LIMIT 5
+    `,
+    prisma.$queryRaw<Array<{ label: string; plays: number }>>`
+      SELECT
+        CASE
+          WHEN t."albumReleaseDate" ~ '^[0-9]{4}' THEN CONCAT(((SUBSTRING(t."albumReleaseDate", 1, 4)::INT / 10) * 10)::TEXT, 's')
+          ELSE 'unknown'
+        END AS label,
+        COUNT(*)::INTEGER AS plays
+      FROM "ListeningEvent" le
+      JOIN "Track" t ON t."id" = le."trackId"
+      WHERE le."userId" = ${userId}
+      GROUP BY label
+      ORDER BY plays DESC
+      LIMIT 6
+    `,
+  ]);
+
+  const totalPlays = summaryRow[0]?.total_plays ?? 0;
+  const explicitPlays = summaryRow[0]?.explicit_plays ?? 0;
+
+  return {
+    averageTrackDurationMs: Math.round(summaryRow[0]?.average_track_duration_ms ?? 0),
+    explicitPlayShare: totalPlays > 0 ? explicitPlays / totalPlays : 0,
+    explicitPlays,
+    totalPlays,
+    albumTypeDistribution: toDistributionPoints(albumTypeRows),
+    releaseDecadeDistribution: toDistributionPoints(decadeRows),
+  };
+}
+
+export async function getContextDistributionStats(userId: string): Promise<ContextDistributionStats> {
+  const rows = await prisma.$queryRaw<Array<{ label: string; plays: number }>>`
+    SELECT
+      COALESCE(NULLIF(le."contextType", ''), 'unknown') AS label,
+      COUNT(*)::INTEGER AS plays
+    FROM "ListeningEvent" le
+    WHERE le."userId" = ${userId}
+    GROUP BY label
+    ORDER BY plays DESC
+  `;
+
+  const totalPlays = rows.reduce((sum, row) => sum + row.plays, 0);
+
+  return {
+    totalPlays,
+    distribution: toDistributionPoints(rows),
+  };
+}
+
+export async function getListenedTrackIdsByUser(userId: string): Promise<Set<string>> {
+  const rows = await prisma.listeningEvent.findMany({
+    where: { userId },
+    select: { trackId: true },
+    distinct: ["trackId"],
+  });
+
+  return new Set(rows.map((row) => row.trackId));
 }

@@ -43,6 +43,10 @@ model Track {
   albumName   String?
   albumImageUrl String?
   durationMs  Int?
+  explicit    Boolean?
+  albumType   String?
+  albumReleaseDate String?
+  albumReleaseDatePrecision String?
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -100,11 +104,14 @@ model ListeningEvent {
   trackId   String
   playedAt  DateTime
   durationMs Int?
+  contextType String?
+  contextUri  String?
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
 
   @@index([userId, playedAt])
   @@index([trackId])
+  @@index([userId, contextType])
   @@unique([userId, playedAt])
 }

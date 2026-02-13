@@ -1,11 +1,20 @@
 import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 import { getInsightsOverview } from "@/src/lib/insights/insights.service";
 import * as repository from "@/src/lib/insights/insights.repository";
+import * as spotifyLiveService from "@/src/lib/insights/spotify-live-insights.service";
 
-jest.mock(
-  "@/src/lib/insights/insights.repository",
-  () => require(require("path").join(process.cwd(), "__tests__", "mocks", "insights.repository.mock"))
-);
+jest.mock("@/src/lib/insights/insights.repository", () => ({
+  getTotalListeningStats: jest.fn(),
+  getTopTracks: jest.fn(),
+  getDailyListeningActivity: jest.fn(),
+  getUserLastSyncedAt: jest.fn(),
+  getListeningRhythmStats: jest.fn(),
+  getDiscoveryStats: jest.fn(),
+  getConsumptionProfileStats: jest.fn(),
+}));
+jest.mock("@/src/lib/insights/spotify-live-insights.service", () => ({
+  getSpotifyLiveInsights: jest.fn(),
+}));
 
 describe("insights.service", () => {
   const mockUserId = "test-user-id";
@@ -59,6 +68,29 @@ describe("insights.service", () => {
       (repository.getUserLastSyncedAt as jest.Mock).mockResolvedValue(
         new Date("2026-02-08T12:00:00.000Z")
       );
+      (repository.getListeningRhythmStats as jest.Mock).mockResolvedValue({
+        sessionCount: 25,
+        peakHourLocal: 19,
+        longestStreakDays: 9,
+        activeStreakDays: 4,
+      });
+      (repository.getDiscoveryStats as jest.Mock).mockResolvedValue({
+        totalPlays30d: 120,
+        uniqueTracks30d: 60,
+        uniqueArtists30d: 28,
+        newTracks30d: 15,
+        newArtists30d: 9,
+        repeatPlays30d: 60,
+      });
+      (repository.getConsumptionProfileStats as jest.Mock).mockResolvedValue({
+        averageTrackDurationMs: 200000,
+        explicitPlayShare: 0.2,
+        explicitPlays: 50,
+        totalPlays: 250,
+        albumTypeDistribution: [{ label: "album", plays: 150, share: 0.6 }],
+        releaseDecadeDistribution: [{ label: "2020s", plays: 180, share: 0.72 }],
+      });
+      (spotifyLiveService.getSpotifyLiveInsights as jest.Mock).mockResolvedValue(null);
 
       const insights = await getInsightsOverview(mockUserId);
 
@@ -66,6 +98,32 @@ describe("insights.service", () => {
         stats: mockStats,
         topTracks: mockTopTracks,
         dailyActivity: mockDailyActivity,
+        listeningRhythm: {
+          sessionCount: 25,
+          averageSessionMinutes: 60,
+          peakHourLocal: 19,
+          longestStreakDays: 9,
+          activeStreakDays: 4,
+        },
+        discovery: {
+          totalPlays30d: 120,
+          uniqueTracks30d: 60,
+          uniqueArtists30d: 28,
+          newTracks30d: 15,
+          newArtists30d: 9,
+          repeatPlays30d: 60,
+          newTrackShare: 0.25,
+          repeatShare: 0.5,
+        },
+        consumption: {
+          averageTrackDurationMs: 200000,
+          explicitPlayShare: 0.2,
+          explicitPlays: 50,
+          totalPlays: 250,
+          albumTypeDistribution: [{ label: "album", plays: 150, share: 0.6 }],
+          releaseDecadeDistribution: [{ label: "2020s", plays: 180, share: 0.72 }],
+        },
+        spotifyLive: null,
         lastSyncedAt: "2026-02-08T12:00:00.000Z",
       });
     });
@@ -80,6 +138,29 @@ describe("insights.service", () => {
       (repository.getTopTracks as jest.Mock).mockResolvedValue([]);
       (repository.getDailyListeningActivity as jest.Mock).mockResolvedValue([]);
       (repository.getUserLastSyncedAt as jest.Mock).mockResolvedValue(null);
+      (repository.getListeningRhythmStats as jest.Mock).mockResolvedValue({
+        sessionCount: 0,
+        peakHourLocal: null,
+        longestStreakDays: 0,
+        activeStreakDays: 0,
+      });
+      (repository.getDiscoveryStats as jest.Mock).mockResolvedValue({
+        totalPlays30d: 0,
+        uniqueTracks30d: 0,
+        uniqueArtists30d: 0,
+        newTracks30d: 0,
+        newArtists30d: 0,
+        repeatPlays30d: 0,
+      });
+      (repository.getConsumptionProfileStats as jest.Mock).mockResolvedValue({
+        averageTrackDurationMs: 0,
+        explicitPlayShare: 0,
+        explicitPlays: 0,
+        totalPlays: 0,
+        albumTypeDistribution: [],
+        releaseDecadeDistribution: [],
+      });
+      (spotifyLiveService.getSpotifyLiveInsights as jest.Mock).mockResolvedValue(null);
 
       const startTime = Date.now();
       await getInsightsOverview(mockUserId);
@@ -99,12 +180,39 @@ describe("insights.service", () => {
       (repository.getTopTracks as jest.Mock).mockResolvedValue([]);
       (repository.getDailyListeningActivity as jest.Mock).mockResolvedValue([]);
       (repository.getUserLastSyncedAt as jest.Mock).mockResolvedValue(null);
+      (repository.getListeningRhythmStats as jest.Mock).mockResolvedValue({
+        sessionCount: 0,
+        peakHourLocal: null,
+        longestStreakDays: 0,
+        activeStreakDays: 0,
+      });
+      (repository.getDiscoveryStats as jest.Mock).mockResolvedValue({
+        totalPlays30d: 0,
+        uniqueTracks30d: 0,
+        uniqueArtists30d: 0,
+        newTracks30d: 0,
+        newArtists30d: 0,
+        repeatPlays30d: 0,
+      });
+      (repository.getConsumptionProfileStats as jest.Mock).mockResolvedValue({
+        averageTrackDurationMs: 0,
+        explicitPlayShare: 0,
+        explicitPlays: 0,
+        totalPlays: 0,
+        albumTypeDistribution: [],
+        releaseDecadeDistribution: [],
+      });
+      (spotifyLiveService.getSpotifyLiveInsights as jest.Mock).mockResolvedValue(null);
 
       const insights = await getInsightsOverview(mockUserId);
 
       expect(insights).toHaveProperty("stats");
       expect(insights).toHaveProperty("topTracks");
       expect(insights).toHaveProperty("dailyActivity");
+      expect(insights).toHaveProperty("listeningRhythm");
+      expect(insights).toHaveProperty("discovery");
+      expect(insights).toHaveProperty("consumption");
+      expect(insights).toHaveProperty("spotifyLive");
       expect(insights).toHaveProperty("lastSyncedAt");
       expect(Array.isArray(insights.topTracks)).toBe(true);
       expect(Array.isArray(insights.dailyActivity)).toBe(true);

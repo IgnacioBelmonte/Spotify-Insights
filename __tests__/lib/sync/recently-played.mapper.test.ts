@@ -78,6 +78,10 @@ describe("recently-played.mapper", () => {
       albumName: "Album A",
       albumImageUrl: "https://i.scdn.co/image/album-a",
       durationMs: 300000,
+      explicit: null,
+      albumType: null,
+      albumReleaseDate: null,
+      albumReleaseDatePrecision: null,
       artists: [
         { artistId: "artist-a", position: 0 },
         { artistId: "artist-b", position: 1 },
@@ -86,5 +90,7 @@ describe("recently-played.mapper", () => {
 
     expect(payload.events[0].durationMs).toBe(180000);
     expect(payload.events[1].durationMs).toBe(240000);
+    expect(payload.events[0].contextType).toBeNull();
+    expect(payload.events[0].contextUri).toBeNull();
   });
 });

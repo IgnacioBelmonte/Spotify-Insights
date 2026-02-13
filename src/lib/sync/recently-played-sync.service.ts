@@ -285,6 +285,10 @@ async function persistTrackCatalog(
     albumName: string | null;
     albumImageUrl: string | null;
     durationMs: number | null;
+    explicit: boolean | null;
+    albumType: string | null;
+    albumReleaseDate: string | null;
+    albumReleaseDatePrecision: string | null;
     artists: Array<{ artistId: string; position: number }>;
   }>
 ): Promise<void> {
@@ -294,6 +298,10 @@ async function persistTrackCatalog(
       artistName: track.artistName,
       albumName: track.albumName ?? undefined,
       durationMs: track.durationMs ?? undefined,
+      explicit: track.explicit,
+      albumType: track.albumType ?? undefined,
+      albumReleaseDate: track.albumReleaseDate ?? undefined,
+      albumReleaseDatePrecision: track.albumReleaseDatePrecision ?? undefined,
       ...(track.albumImageUrl ? { albumImageUrl: track.albumImageUrl } : {}),
     };
 
@@ -307,6 +315,10 @@ async function persistTrackCatalog(
         albumName: track.albumName,
         albumImageUrl: track.albumImageUrl,
         durationMs: track.durationMs,
+        explicit: track.explicit,
+        albumType: track.albumType,
+        albumReleaseDate: track.albumReleaseDate,
+        albumReleaseDatePrecision: track.albumReleaseDatePrecision,
       },
     });
   });
@@ -387,7 +399,13 @@ async function syncUserPremiumState(userId: string, accessToken: string): Promis
 
 async function persistListeningEvents(
   userId: string,
-  events: Array<{ trackId: string; playedAt: Date; durationMs: number | null }>
+  events: Array<{
+    trackId: string;
+    playedAt: Date;
+    durationMs: number | null;
+    contextType: string | null;
+    contextUri: string | null;
+  }>
 ): Promise<void> {
   const operations = events.map((event) =>
     prisma.listeningEvent.upsert({
@@ -400,12 +418,16 @@ async function persistListeningEvents(
       update: {
         trackId: event.trackId,
         durationMs: event.durationMs,
+        contextType: event.contextType,
+        contextUri: event.contextUri,
       },
       create: {
         userId,
         trackId: event.trackId,
         playedAt: event.playedAt,
         durationMs: event.durationMs,
+        contextType: event.contextType,
+        contextUri: event.contextUri,
       },
     })
   );

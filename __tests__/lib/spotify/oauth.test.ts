@@ -42,6 +42,10 @@ describe("oauth.ts", () => {
       expect(url).toContain("user-read-private");
       expect(url).toContain("user-top-read");
       expect(url).toContain("user-read-recently-played");
+      expect(url).toContain("user-library-read");
+      expect(url).toContain("playlist-read-private");
+      expect(url).toContain("playlist-read-collaborative");
+      expect(url).toContain("user-follow-read");
       expect(url).toContain("streaming");
       expect(url).toContain("user-read-playback-state");
       expect(url).toContain("user-read-currently-playing");
