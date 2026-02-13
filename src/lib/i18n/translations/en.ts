@@ -280,4 +280,14 @@ export const en: Record<string, string> = {
   "taste.genres.title": "Top genres",
   "taste.signature.title": "Signature",
   "taste.signature.body": "You lean toward {energy} energy with a mood score of {mood}.",
+
+  "time.title": "Time intelligence",
+  "time.window": "Last {days} days",
+  "time.loading": "Loading time intelligence...",
+  "time.error": "Could not load time intelligence: {message}",
+  "time.plays": "plays",
+  "time.legend.low": "Low activity",
+  "time.legend.high": "High activity",
+  "time.mostActive": "Most active time",
+  "time.totalPlays": "{plays} plays analyzed",
 };
