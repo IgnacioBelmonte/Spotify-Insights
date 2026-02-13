@@ -45,3 +45,7 @@ spotify-insights/
 │  └─ schema.prisma
 ├─ public/
 └─ docker-compose.yml
+
+## Build on Raspberry Pi (arm64)
+
+See `docs/raspberry-pi-build.md` for build-stability guidance and Pi-specific build command.
