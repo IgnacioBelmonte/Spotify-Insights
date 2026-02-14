@@ -29,6 +29,10 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Generate Prisma Client
+        env:
+          # Prisma config requires DATABASE_URL even for client generation.
+          # Dummy value is fine in CI because no DB connection is needed.
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci?schema=public
         run: npx prisma generate
 
       - name: Lint
