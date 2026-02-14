@@ -14,7 +14,8 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE: ghcr.io/${{ github.repository }}
+  # GHCR requires lowercase repository names
+  IMAGE: ghcr.io/${{ toLower(github.repository) }}
 
 jobs:
   build:

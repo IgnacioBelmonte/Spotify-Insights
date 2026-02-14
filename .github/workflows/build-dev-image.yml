@@ -13,7 +13,8 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  # GHCR requires lowercase repository names
+  IMAGE_NAME: ${{ toLower(github.repository) }}
 
 jobs:
   build:
