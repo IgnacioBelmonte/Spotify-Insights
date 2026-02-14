@@ -49,6 +49,7 @@ export default async function ControlPanelPage() {
                   copy: t("controlPanel.actions.copyUrl"),
                   copied: t("controlPanel.actions.copied"),
                   open: t("controlPanel.actions.open"),
+                  openProject: t("controlPanel.actions.openProject"),
                   noUrls: t("controlPanel.urls.empty"),
                   tasks: t("controlPanel.counters.tasks"),
                   activity: t("controlPanel.counters.activity"),

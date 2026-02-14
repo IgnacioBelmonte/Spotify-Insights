@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 type Health = "up" | "degraded" | "down" | "unknown";
@@ -15,6 +16,7 @@ type ProjectCardProps = {
     copy: string;
     copied: string;
     open: string;
+    openProject: string;
     noUrls: string;
     tasks: string;
     activity: string;
@@ -52,7 +54,12 @@ export function ProjectCard({
   return (
     <article className="rounded-2xl border border-[#24434f] bg-[#101c24] p-4 shadow-lg shadow-black/20">
       <div className="mb-3 flex items-start justify-between gap-3">
-        <h2 className="text-lg font-semibold capitalize text-[#e2faf2]">{project.replace(/-/g, " ")}</h2>
+        <div>
+          <h2 className="text-lg font-semibold capitalize text-[#e2faf2]">{project.replace(/-/g, " ")}</h2>
+          <Link href={`/control-panel/${project}`} className="text-xs text-[#95cfd8] hover:text-white">
+            {labels.openProject} →
+          </Link>
+        </div>
         <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${healthClassByValue[health]}`}>
           {healthLabel}
         </span>
