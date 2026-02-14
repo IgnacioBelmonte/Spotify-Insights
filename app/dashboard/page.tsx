@@ -19,44 +19,48 @@ export default async function Dashboard() {
   return (
     <>
       {/* Header with UserMenu */}
-      <header className="bg-[#0f1b24]/85 border-b border-[#1b3a40] p-4 sticky top-0 z-40 backdrop-blur" suppressHydrationWarning>
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-3" suppressHydrationWarning>
-          <div className="flex items-center gap-2 sm:gap-3">
+      <header className="bg-[#0f1b24]/85 border-b border-[#1b3a40] p-3 sm:p-4 sticky top-0 z-40 backdrop-blur" suppressHydrationWarning>
+        <div className="max-w-6xl mx-auto flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" suppressHydrationWarning>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
             <Link
               href="/"
-              className="inline-flex items-center gap-3 rounded-2xl border border-[#1c4d4f] bg-[#0b1820] px-4 py-2 text-2xl md:text-3xl font-extrabold tracking-tight text-white shadow-lg shadow-emerald-500/10 transition hover:scale-[1.02] hover:border-[#2d6a6a] hover:bg-[#0d1f29] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1dd6a7]/60"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[#1c4d4f] bg-[#0b1820] px-3 py-2 text-lg sm:w-auto sm:justify-start sm:gap-3 sm:px-4 sm:text-2xl md:text-3xl font-extrabold tracking-tight text-white shadow-lg shadow-emerald-500/10 transition hover:scale-[1.01] hover:border-[#2d6a6a] hover:bg-[#0d1f29] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1dd6a7]/60"
               aria-label={t("dashboard.backToLobbyAria")}
             >
               <Image
                 src="/spotify-insights-logo.svg"
                 alt={t("common.logoAlt")}
-                width={36}
-                height={36}
-                className="rounded-xl"
+                width={32}
+                height={32}
+                className="rounded-xl sm:h-9 sm:w-9"
               />
               <span className="text-[#9ef3d4]">{t("common.brandSpotify")}</span>
-              <span>{t("common.brandInsights")}</span>
+              <span className="hidden xs:inline">{t("common.brandInsights")}</span>
             </Link>
-            <div className="flex items-center gap-2">
+
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
               <Link
                 href="/share"
-                className="inline-flex items-center rounded-full border border-[#2f6164] bg-[#11323a] px-3 py-2 text-xs sm:text-sm font-semibold text-[#dff7f2] transition hover:bg-[#18444f]"
+                className="inline-flex items-center rounded-full border border-[#2f6164] bg-[#11323a] px-3 py-2 text-xs font-semibold text-[#dff7f2] transition hover:bg-[#18444f] sm:text-sm"
               >
                 {t("dashboard.weeklyRecapCta")}
               </Link>
               <Link
                 href="/taste-profile"
-                className="inline-flex items-center rounded-full border border-[#30576f] bg-[#122c3f] px-3 py-2 text-xs sm:text-sm font-semibold text-[#dbeafe] transition hover:bg-[#17364d]"
+                className="inline-flex items-center rounded-full border border-[#30576f] bg-[#122c3f] px-3 py-2 text-xs font-semibold text-[#dbeafe] transition hover:bg-[#17364d] sm:text-sm"
               >
                 {t("dashboard.tasteProfileCta")}
               </Link>
             </div>
           </div>
-          <UserMenu
-            displayName={user.displayName}
-            imageUrl={user.imageUrl}
-            isPremium={user.isPremium}
-          />
+
+          <div className="flex justify-center sm:justify-end">
+            <UserMenu
+              displayName={user.displayName}
+              imageUrl={user.imageUrl}
+              isPremium={user.isPremium}
+            />
+          </div>
         </div>
       </header>
 

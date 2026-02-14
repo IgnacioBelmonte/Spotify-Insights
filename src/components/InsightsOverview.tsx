@@ -426,13 +426,13 @@ export function InsightsOverview({ isPremium }: InsightsOverviewProps) {
       <div className="absolute -top-56 right-[-10%] h-[420px] w-[420px] rounded-full bg-emerald-500/10 blur-3xl animate-pulse-soft" />
       <div className="absolute -bottom-48 left-[-10%] h-[520px] w-[520px] rounded-full bg-cyan-500/10 blur-3xl animate-pulse-soft" />
 
-      <div className="relative mx-auto max-w-6xl px-6 py-10 space-y-8">
+      <div className="relative mx-auto max-w-6xl px-4 sm:px-6 py-6 sm:py-10 space-y-6 sm:space-y-8">
         <section className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] items-center">
           <div className="space-y-5 animate-fade-up">
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-4 py-1 text-xs uppercase tracking-[0.2em] text-emerald-200">
               {t("dashboard.badge")}
             </div>
-            <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight leading-[1.05]">
+            <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight leading-[1.05]">
               {t("dashboard.heroTitleLine1")}
               <span className="block text-emerald-300">{t("dashboard.heroTitleLine2")}</span>
             </h1>
