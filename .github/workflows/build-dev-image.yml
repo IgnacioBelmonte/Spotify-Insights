@@ -13,8 +13,8 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  # GHCR requires lowercase repository names
-  IMAGE_NAME: ${{ toLower(github.repository) }}
+  # GHCR requires lowercase repository names (hardcoded)
+  IMAGE_NAME: ignaciobelmonte/spotify-insights
 
 jobs:
   build:
