@@ -1,8 +1,7 @@
 name: Build DEV Docker image (arm64)
 
 on:
-  push:
-    branches: [dev]
+  workflow_dispatch:
 
 concurrency:
   group: build-dev-${{ github.ref }}
