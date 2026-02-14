@@ -16,6 +16,8 @@ export const en: Record<string, string> = {
   "common.loggedInAs": "Logged in as",
 
   "home.authErrorTitle": "Authentication Error",
+  "home.authErrorGenericOAuth": "That link is not valid by itself. Please start the login flow again.",
+  "home.authErrorHint": "Tip: use the \"Login with Spotify\" button (don’t open the callback URL manually).",
   "home.authErrorDismiss": "Dismiss",
   "home.badge": "Spotify Insights",
   "home.heroTitleLine1": "Make your listening",

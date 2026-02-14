@@ -50,7 +50,8 @@ export default function Home() {
     const params = new URLSearchParams(window.location.search);
     const error = params.get("error");
     if (error) {
-      setAuthError(decodeURIComponent(error));
+      // URLSearchParams already decodes percent-encoding.
+      setAuthError(error);
     }
 
     return () => {
@@ -66,18 +67,29 @@ export default function Home() {
         className="absolute -bottom-48 left-[-10%] h-[520px] w-[520px] rounded-full bg-cyan-500/10 blur-3xl animate-pulse-soft"
         style={{ animationDelay: "150ms" }}
       />
-      <div className="relative mx-auto w-full max-w-6xl px-6 py-12">
-        <div className="bg-[#0f1b24]/75 backdrop-blur-md border border-[#1b3a40] rounded-3xl p-8 sm:p-10 shadow-2xl shadow-emerald-500/10">
+      <div className="relative mx-auto w-full max-w-6xl px-4 sm:px-6 py-8 sm:py-12">
+        <div className="bg-[#0f1b24]/75 backdrop-blur-md border border-[#1b3a40] rounded-3xl p-5 sm:p-10 shadow-2xl shadow-emerald-500/10">
           {authError && (
-            <div className="mb-6 p-4 bg-red-950/40 border border-red-800 rounded-lg text-red-200 text-sm">
-              <p className="font-semibold">{t("home.authErrorTitle")}</p>
-              <p className="mt-1">{authError}</p>
-              <button
-                onClick={() => setAuthError(null)}
-                className="mt-2 text-xs underline hover:text-red-100"
-              >
-                {t("home.authErrorDismiss")}
-              </button>
+            <div className="mb-6 rounded-xl border border-red-800/70 bg-red-950/40 p-4 text-sm text-red-200">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <p className="font-semibold">{t("home.authErrorTitle")}</p>
+                  <p className="mt-1 break-words text-red-100/90">
+                    {authError.toLowerCase().includes("código")
+                      ? t("home.authErrorGenericOAuth")
+                      : authError}
+                  </p>
+                  <p className="mt-2 text-xs text-red-100/70">
+                    {t("home.authErrorHint")}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setAuthError(null)}
+                  className="shrink-0 rounded-lg border border-red-800/70 bg-red-950/30 px-3 py-2 text-xs font-semibold text-red-100 hover:bg-red-900/30"
+                >
+                  {t("home.authErrorDismiss")}
+                </button>
+              </div>
             </div>
           )}
 
