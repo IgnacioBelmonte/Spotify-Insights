@@ -19,6 +19,8 @@ echo "[deploy-dev] Using image: $IMAGE"
 
 # Compose uses IMAGE env var
 export SPOTIFY_INSIGHTS_IMAGE="$IMAGE"
+# Also pass the tag so the app can display it in /api/health
+export APP_IMAGE_TAG="$TAG"
 
 # Pull + restart
 sudo -E docker compose -p "$PROJECT_NAME" -f "$COMPOSE_FILE" pull app

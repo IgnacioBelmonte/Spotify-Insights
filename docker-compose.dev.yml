@@ -21,6 +21,9 @@ services:
     env_file:
       - .env.dev
     environment:
+      # Visible build/version info
+      APP_IMAGE_TAG: ${APP_IMAGE_TAG:-}
+
       # Force DB host to the docker service name
       DATABASE_URL: postgresql://spotify:spotify@db:5432/spotify_insights_dev?schema=public
 

@@ -47,6 +47,8 @@ jobs:
           file: Dockerfile.dev
           push: true
           platforms: linux/arm64
+          build-args: |
+            APP_GIT_SHA=${{ github.sha }}
           tags: |
             ${{ env.IMAGE }}:dev-${{ github.sha }}
             ${{ env.IMAGE }}:dev-latest

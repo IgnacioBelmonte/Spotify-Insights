@@ -12,6 +12,9 @@ export default function Home() {
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [buildInfo, setBuildInfo] = useState<{ gitSha?: string | null; imageTag?: string | null } | null>(
+    null
+  );
 
   useEffect(() => {
     let active = true;
@@ -45,6 +48,18 @@ export default function Home() {
     }
     fetchSession();
     setMounted(true);
+
+    // Fetch build info (matches the running container)
+    fetch("/api/health")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (!active) return;
+        if (!j) return;
+        setBuildInfo({ gitSha: j?.gitSha ?? null, imageTag: j?.imageTag ?? null });
+      })
+      .catch(() => {
+        // ignore
+      });
 
     // Check for auth error in URL query params
     const params = new URLSearchParams(window.location.search);
@@ -202,8 +217,18 @@ export default function Home() {
             </aside>
           </section>
 
-          <footer className="mt-8 text-xs text-slate-400">
-            &copy; {new Date().getFullYear()} {t("home.footer")}
+          <footer className="mt-8 flex flex-col gap-2 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+            <span>
+              &copy; {new Date().getFullYear()} {t("home.footer")}
+            </span>
+            <span className="text-slate-500">
+              {buildInfo?.gitSha ? (
+                <>Version: {String(buildInfo.gitSha).slice(0, 7)}</>
+              ) : (
+                <>Version: unknown</>
+              )}
+              {buildInfo?.imageTag ? <> • Image: {buildInfo.imageTag}</> : null}
+            </span>
           </footer>
         </div>
       </div>
