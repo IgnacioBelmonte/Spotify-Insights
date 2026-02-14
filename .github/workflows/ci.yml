@@ -42,4 +42,8 @@ jobs:
         run: npm test -- --runInBand
 
       - name: Build
+        env:
+          # Next/Prisma code paths may access DATABASE_URL at build time.
+          # Dummy value is fine for CI because no DB connection is performed.
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci?schema=public
         run: npm run build
