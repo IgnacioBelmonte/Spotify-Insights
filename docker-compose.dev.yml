@@ -1,0 +1,28 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_USER: spotify
+      POSTGRES_PASSWORD: spotify
+      POSTGRES_DB: spotify_insights_dev
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+
+  app:
+    image: ${SPOTIFY_INSIGHTS_IMAGE:-spotifydev-app}
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - "3001:3000"
+    env_file:
+      - .env.dev
+    environment:
+      # Force DB host to the docker service name
+      DATABASE_URL: postgresql://spotify:spotify@db:5432/spotify_insights_dev?schema=public
+
+volumes:
+  postgres_data_dev:
